@@ -1,0 +1,53 @@
+#!/usr/bin/java --source 11
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+public class Main {
+
+	private static Element root;
+	private static XPath xPath;
+	private static FileWriter write;
+
+	public static void main(String[] args) throws Exception {
+		var factory = DocumentBuilderFactory.newInstance();
+		var builder = factory.newDocumentBuilder();
+		var xml = builder.parse(new File(args[0]));
+		root = xml.getDocumentElement();
+		var xpf = XPathFactory.newInstance();
+		xPath = xpf.newXPath();
+		write = new FileWriter(new File(args[1]), false);
+
+		writeVar("groupId", "/project/groupId");
+		writeVar("artifactId", "/project/artifactId");
+		writeVar("version", "/project/version");
+		writeVar("packaging", "/project/packaging");
+		writeVar("name", "/project/name");
+		writeVar("description", "/project/description");
+		writeVar("organization_name", "/project/organization/name");
+		writeVar("organization_url", "/project/organization/url");
+		writeVar("license", "/project/licenses/license/name");
+		writeVar("author_name", "/project/developers/developer[1]/name");
+		writeVar("author_email", "/project/developers/developer[1]/email");
+		writeVar("java_version", "/project/properties/java.version");
+		write.close();
+	}
+
+	private static void writeVar(String varName, String expression) throws Exception {
+		write.write("MVN_VAR_" + varName + "=\"" + (String) xPath.evaluate(expression, root) + "\";\n");
+	}
+
+}

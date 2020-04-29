@@ -1,0 +1,12 @@
+packages/*
+scripts/makeself.sh
+scripts/makeself-header.sh
+
+# Windows / macOS
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+*.code-workspace

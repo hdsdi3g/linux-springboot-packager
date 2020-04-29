@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Appenders>
+		<Console name="console-stdout" target="SYSTEM_ERR" follow="true">
+			<PatternLayout pattern="%-5p %c &#8249;%t&#8250; %m%n" />
+			<ThresholdFilter level="WARN" />
+		</Console>
+		<RollingFile
+				name="RollingAppender"
+				fileName="CONFIGURED_ROOT/var/log/APPLICATION_NAME/APPLICATION_NAME.log"
+				filePattern="CONFIGURED_ROOT/var/log/APPLICATION_NAME/APPLICATION_NAME-%d{yyyy-MM-dd}-%i.log.gz"
+				filePermissions="rw-------">
+			<PatternLayout pattern="%d{ISO8601} %-5p %c &#8249;%t&#8250; %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="50 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="20" />
+		</RollingFile>
+	</Appenders>
+
+	<Loggers>
+		<Logger name="org.apache.catalina.startup.DigesterFactory" level="error" />
+		<Logger name="org.apache.catalina.util.LifecycleBase" level="error" />
+		<Logger name="org.apache.coyote.http11.Http11NioProtocol" level="warn" />
+		<logger name="org.apache.sshd.common.util.SecurityUtils" level="warn" />
+		<Logger name="org.apache.tomcat.util.net.NioSelectorPool" level="warn" />
+		<Logger name="org.eclipse.jetty.util.component.AbstractLifeCycle" level="error" />
+		<Logger name="org.hibernate.validator.internal.util.Version" level="warn" />
+		<logger name="org.springframework.boot.actuate.endpoint.jmx" level="warn" />
+		<logger name="org.apache.catalina.valves.AccessLogValve" level="trace" />
+
+		<Root level="info">
+			<AppenderRef ref="RollingAppender" />
+			<AppenderRef ref="console-stdout" />
+		</Root>
+	</Loggers>
+
+</Configuration>

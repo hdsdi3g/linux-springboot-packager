@@ -1,0 +1,18 @@
+spring:
+    main:
+        banner-mode: "off"
+    datasource:
+        url: DATABASE_URL
+        username: DATABASE_USER
+        password: "DATABASE_PASSWORD"
+    jpa:
+        properties:
+            hibernate:
+                dialect: "DATABASE_DIALECT"
+                jdbc:
+                     time_zone: "UTC"
+        hibernate:
+            ddl-auto: validate
+        open-in-view: false
+server:
+    port: 8080
