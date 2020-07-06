@@ -126,7 +126,9 @@ mkdir -p "$LIB_DIR";
 # STOP & DISABLE SERVICE
 ########################
 if [ "$EUID" -eq 0 ]; then
+    set +e
     COUNT_SERVICE_ENABLED=$(systemctl list-unit-files --state=enabled | grep -c $SERVICE_NAME);
+    set -e
     if [ "$COUNT_SERVICE_ENABLED" -gt "0" ]; then
         set +e
         RUNNING_SERVICE=$(systemctl is-active --quiet $SERVICE_NAME > /dev/null 2>&1; echo $?);
