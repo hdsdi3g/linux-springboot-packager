@@ -74,14 +74,8 @@ DEFAULT_FILE="$ROOT/etc/default/$APP_NAME";
 LIB_DIR="$ROOT/usr/lib/$APP_NAME";
 SYSTEMD_DIR="$ROOT/etc/systemd/system";
 SERVICE_NAME="$APP_NAME";
-
-if [ "$EUID" -eq 0 ]; then
-    SERVICE_USER_NAME="$SERVICE_NAME";
-else
-    SERVICE_USER_NAME="$USER";
-fi
-
 CURRENT_APP_VERSION_FILE="$CONF_DIR/version";
+CURRENT_APP_RUNAS_FILE="$CONF_DIR/deploy-run-as";
 DATABASE_CHANGELOG="$BASE_DIR/database-changelog.xml";
 
 ################
@@ -155,6 +149,21 @@ fi
 ##########
 USER_HOME_DIR="$ROOT/var/lib/$APP_NAME";
 
+if [ -f "$CURRENT_APP_RUNAS_FILE" ]; then
+    SERVICE_USER_NAME=$(cat "$CURRENT_APP_RUNAS_FILE");
+else
+    if [ "$EUID" -eq 0 ]; then
+        SERVICE_USER_NAME="$SERVICE_NAME";
+    else
+        SERVICE_USER_NAME="$USER";
+    fi
+    read -rp "Enter the username to run $APP_NAME: [$SERVICE_USER_NAME]: " linuxusrname
+    SERVICE_USER_NAME=${linuxusrname:-$SERVICE_USER_NAME}
+fi
+
+echo "This app will run as $SERVICE_USER_NAME user (to change this, update $CURRENT_APP_RUNAS_FILE and restart setup)";
+echo "$SERVICE_USER_NAME" > "$CURRENT_APP_RUNAS_FILE";
+
 if [ "$EUID" -eq 0 ]; then
     set +e
     USER_EXISTS=$(id -u "$SERVICE_USER_NAME" > /dev/null 2>&1; echo $?);
@@ -200,7 +209,7 @@ if [ -f "$DATABASE_CHANGELOG" ]; then
         read -rp "Enter the database server username [$SERVICE_USER_NAME]: " dbusername
         dbusername=${dbusername:-$SERVICE_USER_NAME}
 
-        DEFAULT_URL="jdbc:mysql://$dbserver:$dbport/$dbname?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC";
+        DEFAULT_URL="jdbc:mysql://$dbserver:$dbport/$dbname?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
         read -rp "Enter the database JDBC URL [$DEFAULT_URL]: " dburl
         dburl=${dburl:-$DEFAULT_URL}
 
