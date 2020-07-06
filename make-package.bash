@@ -68,12 +68,13 @@ if [ ! -f "$MVN_POM" ]; then
 fi
 
 PACKAGE_DIR="$(pwd)/packages";
+mkdir -p "$PACKAGE_DIR";
 
 #########################################
 # PREPARE PROJECT DIRECTORY
 # COPY ALL TEMPLATES TO PROJECT DIRECTORY
 #########################################
-PROJECT_DIR="$PACKAGE_DIR/$(basename "$(realpath "$BASE_DIR")")";
+PROJECT_DIR="$(pwd)/projects/$(basename "$(realpath "$BASE_DIR")")";
 mkdir -p "$PROJECT_DIR";
 
 for TPL_FILE in template/*; do

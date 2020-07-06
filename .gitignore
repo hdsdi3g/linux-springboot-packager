@@ -1,4 +1,5 @@
 packages/*
+projects/*
 scripts/makeself.sh
 scripts/makeself-header.sh
 
