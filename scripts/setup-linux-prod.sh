@@ -400,6 +400,11 @@ $JAVA \
     -Dreplace.SVCNAME="$SERVICE_NAME" \
     -Dreplace.SERVICE_USER_NAME="$SERVICE_USER_NAME" \
     -Dreplace.SERVICE_GRP_NAME="$SERVICE_USER_NAME" \
+    -Dreplace.JAR_FILE="$LIB_DIR/$JAR_NAME" \
+    -Dreplace.JAVA_HEAP_DUMPS="$USER_HOME_DIR" \
+    -Dreplace.JAVA_LOG="$LOG_DIR" \
+    -Dreplace.SPRING_CONF_FILE="$CURRENT_APP_CONF" \
+    -Dreplace.SPRING_CONF_LOG4J="$CURRENT_LOG_CONF" \
     "$BASE_DIR/set-file-vars.java" \
     "$BASE_DIR/systemd.service"
 
