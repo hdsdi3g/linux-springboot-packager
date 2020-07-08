@@ -18,7 +18,7 @@ ExecStart=JAVA_BIN -noverify -server \
     -XX:NumberOfGCLogFiles=10 \
     -XX:GCLogFileSize=5M \
     -Xloggc:${JAVA_LOG}/gc.log \
-    -Dlogging.config=${SPRING_CONF_LOG4J}
+    -Dlogging.config=${SPRING_CONF_LOG4J} \
     -jar ${JAR_FILE} \
     --spring.config.location=${SPRING_CONF_FILE}
 SuccessExitStatus=143
