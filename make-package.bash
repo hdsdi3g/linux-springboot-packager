@@ -165,6 +165,7 @@ fi
 #########################
 # MANAGE DEFAULT APP CONF
 #########################
+
 PROJECT_APP_CONF="$PROJECT_DIR/application.yml";
 if [ ! -f "$PROJECT_APP_CONF" ] ; then
     PROJECT_APP_CONF="$PROJECT_DIR/application.yaml";
@@ -173,14 +174,16 @@ if [ ! -f "$PROJECT_APP_CONF" ] ; then
         if [ ! -f "$PROJECT_APP_CONF" ] ; then
             PROJECT_APP_CONF="$PROJECT_DIR/application.yml";
             echo "";
-            echo "Can't found default application.yml|yaml|properties in $PROJECT_DIR, copy it from a template example...";
-
-            if [ -f "$PROJECT_CHANGELOG" ] ; then
+            if [ -f "$BASE_DIR/scripts/application-prod.yml" ] ; then
+                echo "Can't found default application.yml|yaml|properties in $PROJECT_DIR, copy it from project application-prod.yml...";
+                cp "$BASE_DIR/scripts/application-prod.yml" "$PROJECT_APP_CONF"
+            elif [ -f "$PROJECT_CHANGELOG" ] ; then
+                echo "Can't found default application.yml|yaml|properties in $PROJECT_DIR, copy it from a template (persistence) example...";
                 cp "template/examples/application-prod-persistence.yml-example" "$PROJECT_APP_CONF";
             else
+                echo "Can't found default application.yml|yaml|properties in $PROJECT_DIR, copy it from a template example...";
                 cp "template/examples/application-prod.yml-example" "$PROJECT_APP_CONF";
             fi
-
             echo "Copied file: $PROJECT_APP_CONF, free feel to edit it (you must restart this script after)";
             echo "This file will be the default configuration file used by setup script.";
         fi
@@ -193,8 +196,13 @@ fi
 PROJECT_LOG_CONF="$PROJECT_DIR/log4j2.xml";
 if [ ! -f "$PROJECT_LOG_CONF" ] ; then
     echo "";
-    echo "Can't found default log4j2.xml in $PROJECT_DIR, copy it from a template example...";
-    cp "template/examples/log4j2-linux-prod.xml-example" "$PROJECT_LOG_CONF";
+    if [ -f "$BASE_DIR/scripts/log4j2-prod.xml" ] ; then
+        echo "Can't found default log4j2.xml in $PROJECT_DIR, copy it from project log4j2-prod.xml...";
+        cp "$BASE_DIR/scripts/log4j2-prod.xml" "$PROJECT_LOG_CONF";
+    else
+        echo "Can't found default log4j2.xml in $PROJECT_DIR, copy it from a template example...";
+        cp "template/examples/log4j2-linux-prod.xml-example" "$PROJECT_LOG_CONF";
+    fi
     echo "Copied file: $PROJECT_LOG_CONF, free feel to edit it (you must restart this script after)";
     echo "This file will be the default configuration file used by setup script.";
 fi
