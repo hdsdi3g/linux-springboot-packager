@@ -10,7 +10,7 @@ WorkingDirectory=WORK_DIR
 ExecStart=JAVA_BIN -noverify -server \
     -Dfile.encoding=UTF-8 \
     -Xms256m -Xmx1024m \
-    -XX:OnOutOfMemoryError="kill -KILL %p" \
+    -XX:+ExitOnOutOfMemoryError \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=${JAVA_HEAP_DUMPS} \
     -XX:+UseGCLogFileRotation \
@@ -27,7 +27,7 @@ Group=SERVICE_GRP_NAME
 StandardOutput=journal
 StandardError=journal
 TimeoutStopSec=30
-Restart=on-failure
+Restart=always
 [Install]
 WantedBy=multi-user.target
 Alias=SVCNAME.service
