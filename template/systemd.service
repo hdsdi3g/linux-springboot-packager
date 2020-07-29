@@ -14,7 +14,6 @@ ExecStart=JAVA_BIN -noverify -server \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=JAVA_HEAP_DUMPS \
     -XX:+UseGCOverheadLimit \
-    -Xlog:gc*,safepoint:JAVA_LOG/gc.log:time,uptime,level,tags:filecount=10,filesize=5M \
     -Dlogging.config=SPRING_CONF_LOG4J \
     -jar JAR_FILE \
     --spring.config.location=SPRING_CONF_FILE
