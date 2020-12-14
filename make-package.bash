@@ -231,7 +231,7 @@ fi
 scripts/makeself.sh \
     --lsm "$LSM_FILE" \
     --tar-extra "--owner=root --group=root --no-xattrs --no-acls --no-selinux" \
-    --nocomp \
+    --nocomp --nooverwrite \
     "$PROJECT_DIR" "$PACKAGE_FILE" "$LABEL" "./setup.sh"
 chmod +x "$PACKAGE_FILE"
 
