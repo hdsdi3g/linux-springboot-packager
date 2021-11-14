@@ -4,6 +4,7 @@
 # USAGE
 # $0 <SpringBoot project path>
 # With export SKIP_BUILD=1 for skip maven build if the expected jar exists.
+# With export SKIP_LINUX=1 for skip Linux builds.
 
 set -eu
 
@@ -25,6 +26,12 @@ if ! [ -x "$(command -v realpath)" ]; then
 	echo "Error: realpath is not installed." >&2
 	exit 4
 fi
+if ! [ -x "$(command -v java)" ]; then
+    echo "Can't found java!" >&2;
+    echo "Please setup a valid JDK, version 11+" >&2;
+    exit 2;
+fi
+JAVA=$(which java);
 
 cd "$(dirname "$0")"
 
@@ -139,33 +146,35 @@ cp "$SPRING_EXEC" "$PROJECT_SPRING_EXEC";
 ######################################################
 # MAKE AND IMPORT, IF NEEDED, LIQUIBASE FULL CHANGELOG
 ######################################################
-EXPECTED_CHANGELOG="$BASE_DIR/scripts/db/database-changelog.xml";
+
 PROJECT_CHANGELOG="$PROJECT_DIR/database-changelog.xml";
-if [ -f "$EXPECTED_CHANGELOG" ] ; then
-    EXPECTED_FULL_CHANGELOG="$MVN_TARGET/database-full-archive-changelog.xml";
+if [ "${SKIP_LINUX:-"0"}" = "0" ]; then
+    EXPECTED_CHANGELOG="$BASE_DIR/scripts/db/database-changelog.xml";
+    if [ -f "$EXPECTED_CHANGELOG" ] ; then
+        EXPECTED_FULL_CHANGELOG="$MVN_TARGET/database-full-archive-changelog.xml";
 
-    if [ -f "$EXPECTED_FULL_CHANGELOG" ] && [ "${SKIP_BUILD:-"0"}" = "1" ] ; then
-        echo "Skip Maven remake setupdb archive xml file"
-    else
-        echo "Start Maven: make setupdb archive xml file..."
-        $MVN -f "$MVN_POM" "${MAVEN_OPTS[@]}" setupdb:archive
-    fi
+        if [ -f "$EXPECTED_FULL_CHANGELOG" ] && [ "${SKIP_BUILD:-"0"}" = "1" ] ; then
+            echo "Skip Maven remake setupdb archive xml file"
+        else
+            echo "Start Maven: make setupdb archive xml file..."
+            $MVN -f "$MVN_POM" "${MAVEN_OPTS[@]}" setupdb:archive
+        fi
 
-    if [ ! -f "$EXPECTED_FULL_CHANGELOG" ] ; then
-        echo "Can't found $EXPECTED_FULL_CHANGELOG used by Liquibase and created by tv.hd3g.mvnplugin.setupdb:archive." >&2;
-        echo "Only default configuration is allowed here." >&2;
-        exit 6;
+        if [ ! -f "$EXPECTED_FULL_CHANGELOG" ] ; then
+            echo "Can't found $EXPECTED_FULL_CHANGELOG used by Liquibase and created by tv.hd3g.mvnplugin.setupdb:archive." >&2;
+            echo "Only default configuration is allowed here." >&2;
+            exit 6;
+        fi
+        if [ -f "$PROJECT_CHANGELOG" ] ; then
+            rm "$PROJECT_CHANGELOG";
+        fi
+        cp "$EXPECTED_FULL_CHANGELOG" "$PROJECT_CHANGELOG";
     fi
-    if [ -f "$PROJECT_CHANGELOG" ] ; then
-        rm "$PROJECT_CHANGELOG";
-    fi
-    cp "$EXPECTED_FULL_CHANGELOG" "$PROJECT_CHANGELOG";
 fi
 
 #########################
 # MANAGE DEFAULT APP CONF
 #########################
-
 PROJECT_APP_CONF="$PROJECT_DIR/application.yml";
 if [ ! -f "$PROJECT_APP_CONF" ] ; then
     PROJECT_APP_CONF="$PROJECT_DIR/application.yaml";
@@ -190,50 +199,110 @@ if [ ! -f "$PROJECT_APP_CONF" ] ; then
     fi
 fi
 
-#########################
-# MANAGE DEFAULT LOG CONF
-#########################
-PROJECT_LOG_CONF="$PROJECT_DIR/log4j2.xml";
-if [ ! -f "$PROJECT_LOG_CONF" ] ; then
-    echo "";
-    if [ -f "$BASE_DIR/scripts/log4j2-prod.xml" ] ; then
-        echo "Can't found default log4j2.xml in $PROJECT_DIR, copy it from project log4j2-prod.xml...";
-        cp "$BASE_DIR/scripts/log4j2-prod.xml" "$PROJECT_LOG_CONF";
-    else
-        echo "Can't found default log4j2.xml in $PROJECT_DIR, copy it from a template example...";
-        cp "template/examples/log4j2-linux-prod.xml-example" "$PROJECT_LOG_CONF";
+###############################
+# MANAGE DEFAULT LINUX LOG CONF
+###############################
+if [ "${SKIP_LINUX:-"0"}" = "0" ]; then
+    PROJECT_LOG_CONF="$PROJECT_DIR/log4j2.xml";
+    if [ ! -f "$PROJECT_LOG_CONF" ] ; then
+        echo "";
+        if [ -f "$BASE_DIR/scripts/log4j2-prod.xml" ] ; then
+            echo "Found default log4j2.xml in $BASE_DIR, copy it from project log4j2-prod.xml...";
+            cp "$BASE_DIR/scripts/log4j2-prod.xml" "$PROJECT_LOG_CONF";
+        else
+            echo "Can't found default log4j2.xml in $PROJECT_DIR, copy it from a template example...";
+            cp "template/examples/log4j2-linux-prod.xml-example" "$PROJECT_LOG_CONF";
+        fi
+        echo "Copied file: $PROJECT_LOG_CONF, free feel to edit it (you must restart this script after)";
+        echo "This file will be the default configuration file used by setup script.";
     fi
-    echo "Copied file: $PROJECT_LOG_CONF, free feel to edit it (you must restart this script after)";
-    echo "This file will be the default configuration file used by setup script.";
 fi
 
 ###################
 # COPY SETUP SCRIPT
 ###################
 PROJECT_SETUP="$PROJECT_DIR/setup.sh";
-if [ -f "$PROJECT_SETUP" ] ; then
-    rm -f "$PROJECT_SETUP"
-fi
-cp "scripts/setup-linux-prod.sh" "$PROJECT_SETUP";
-
-##########################
-# MAKE AUTOEXTRACT PACKAGE
-##########################
-echo "";
-echo "Assemble autoextract package..."
-LABEL="$MVN_VAR_name version $MVN_VAR_version";
-PACKAGE_FILE="$PACKAGE_DIR/$MVN_VAR_artifactId-$MVN_VAR_version.run.sh";
-
-if [ -f "$PACKAGE_FILE" ] ; then
-    rm -f "$PACKAGE_FILE";
+if [ "${SKIP_LINUX:-"0"}" = "0" ]; then
+    if [ -f "$PROJECT_SETUP" ] ; then
+        rm -f "$PROJECT_SETUP"
+    fi
+    cp "scripts/setup-linux-prod.sh" "$PROJECT_SETUP";
 fi
 
-scripts/makeself.sh \
-    --lsm "$LSM_FILE" \
-    --tar-extra "--owner=root --group=root --no-xattrs --no-acls --no-selinux" \
-    --nocomp --nooverwrite \
-    "$PROJECT_DIR" "$PACKAGE_FILE" "$LABEL" "./setup.sh"
-chmod +x "$PACKAGE_FILE"
+################################
+# MAKE LINUX AUTOEXTRACT PACKAGE
+################################
+if [ "${SKIP_LINUX:-"0"}" = "0" ]; then
+    echo "";
+    echo "Assemble autoextract package..."
+    LABEL="$MVN_VAR_name version $MVN_VAR_version";
+    PACKAGE_FILE="$PACKAGE_DIR/$MVN_VAR_artifactId-$MVN_VAR_version.run.sh";
+
+    if [ -f "$PACKAGE_FILE" ] ; then
+        rm -f "$PACKAGE_FILE";
+    fi
+
+    scripts/makeself.sh \
+        --lsm "$LSM_FILE" \
+        --tar-extra "--owner=root --group=root --no-xattrs --no-acls --no-selinux" \
+        --nocomp --nooverwrite \
+        "$PROJECT_DIR" "$PACKAGE_FILE" "$LABEL" "./setup.sh"
+    chmod +x "$PACKAGE_FILE"
+fi
+
+########################
+# MAKE WINDOWS INSTALLER
+########################
+
+if [ -x "$(command -v makensis)" ]; then
+    WINDOWS_PATH="$PROJECT_DIR/windows-paths.inc.sh";
+    . $WINDOWS_PATH
+
+    echo "Prepare servicewinsw.xml / winsw.xml";
+    cp -f "$PROJECT_DIR/servicewinsw.xml" "$PROJECT_DIR/winsw.xml"
+    $JAVA \
+        -Dreplace.APP_NAME="$MVN_VAR_name" \
+        -Dreplace.APP_LONG_NAME="$MVN_VAR_name" \
+        -Dreplace.APP_DESCR="$MVN_VAR_description" \
+        -Dreplace.WORKING_PATH="$WORKING_PATH\\$MVN_VAR_name" \
+        -Dreplace.INSTDIR="$INSTALL_PATH\\$MVN_VAR_name" \
+        "$PROJECT_DIR/set-file-vars.java" \
+        "$PROJECT_DIR/winsw.xml"
+    sed -i $'s/$/\r/' "$PROJECT_DIR/winsw.xml"
+
+    echo "Prepare log4j2.xml for Windows executable"
+    cp "template/examples/log4j2-windows-prod.xml-example" "$PROJECT_DIR/log4j2-windows.xml";
+    $JAVA \
+        -Dreplace.LOG_PATH="$WORKING_PATH\\$MVN_VAR_name" \
+        "$PROJECT_DIR/set-file-vars.java" \
+        "$PROJECT_DIR/log4j2-windows.xml"
+    sed -i $'s/$/\r/' "$PROJECT_DIR/log4j2-windows.xml"
+
+    echo "Build Windows executable...";
+    makensis \
+        -DWORKING_PATH="$WORKING_PATH\\$MVN_VAR_name" \
+        -DINSTALL_PATH="$INSTALL_PATH\\$MVN_VAR_name" \
+        -DPROJECT_DIR="$PROJECT_DIR" \
+        -DPROJECT_SPRING_EXEC="$PROJECT_SPRING_EXEC" \
+        -DWINSW_EXEC_PATH="$(scripts/search-winsw)" \
+        -DVERSION="$MVN_VAR_version" \
+        -DAPP_NAME="$MVN_VAR_name" \
+        -DAPP_LONG_NAME="$MVN_VAR_name" \
+        -DAPP_DESCR="$MVN_VAR_description" \
+        -DAPP_URL="$MVN_VAR_organization_url" \
+        -DAPP_VENDOR="$MVN_VAR_organization_name $MVN_VAR_organization_url" \
+        -INPUTCHARSET UTF8 -WX \
+        scripts/builder.nsi
+    
+    echo "Clean temp files for Windows executable"
+    rm -f "$PROJECT_DIR/winsw.xml";
+    rm -f "$PROJECT_DIR/log4j2-windows.xml";
+
+    echo "";
+    echo "$MVN_VAR_name $MVN_VAR_version Windows installer executable is now ready on packages directory.";
+else
+    echo "makensis not found, skip Windows executable build";
+fi
 
 ##################
 # CLEAN TEMP FILES
@@ -242,13 +311,17 @@ chmod +x "$PACKAGE_FILE"
 rm "$MVN_VARS"
 rm "$LSM_FILE"
 rm "$PROJECT_SPRING_EXEC"
-rm "$PROJECT_SETUP"
+if [ -f "$PROJECT_SETUP" ] ; then
+    rm "$PROJECT_SETUP";
+fi
 if [ -f "$PROJECT_CHANGELOG" ] ; then
     rm "$PROJECT_CHANGELOG";
 fi
 
-echo "";
-echo "$MVN_VAR_name $MVN_VAR_version package is now ready to be deployed on Linux/WSL host";
-echo "";
-echo "Usage for a simple autoextract test/check: ./$(basename "$PACKAGE_FILE") --keep --target \"extracted\" [-- -norun]";
-echo "Usage for deploy to another root directory: ./$(basename "$PACKAGE_FILE") [-- -chroot \"/opt\"]";
+if [ "${SKIP_LINUX:-"0"}" = "0" ]; then
+    echo "";
+    echo "$MVN_VAR_name $MVN_VAR_version package is now ready to be deployed on Linux/WSL host";
+    echo "";
+    echo "Usage for a simple autoextract test/check: ./$(basename "$PACKAGE_FILE") --keep --target \"extracted\" [-- -norun]";
+    echo "Usage for deploy to another root directory: ./$(basename "$PACKAGE_FILE") [-- -chroot \"/opt\"]";
+fi

@@ -1,0 +1,26 @@
+<service>
+  <id>APP_NAME</id>
+  <name>APP_LONG_NAME</name>
+  <description>APP_DESCR</description>
+  <executable>java</executable>
+  <arguments>
+    -Xms256m -Xmx1024m -XX:+ExitOnOutOfMemoryError -XX:+UseGCOverheadLimit
+    -Dfile.encoding=UTF-8
+    -Dlogging.config="WORKING_PATH\log4j2.xml"
+    -Duser.dir="WORKING_PATH"
+    -jar "INSTDIR\app.jar"
+    --spring.config.location="WORKING_PATH\application.yml"
+  </arguments>
+  <delayedAutoStart>true</delayedAutoStart>
+  <autoRefresh>true</autoRefresh>
+  <startmode>Manual</startmode>
+  <logpath>WORKING_PATH</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+  <serviceaccount>
+    <username>NT AUTHORITY\NetworkService</username>
+    <!-- or LocalSystem or NT AUTHORITY\LocalService -->
+  </serviceaccount>
+</service>
