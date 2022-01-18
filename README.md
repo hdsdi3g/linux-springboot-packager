@@ -1,6 +1,6 @@
 # SpringBoot Linux Packager
 
-Create self Linux installer (via [Makeself](https://makeself.io/)) and create Windows installer (via [NSIS](https://sourceforge.net/projects/nsis/) and [WinSW](https://github.com/winsw/winsw)) for a SpringBoot project.
+Create self Linux installer (via [Makeself](https://makeself.io/)) and create Windows installer (via [NSIS](https://sourceforge.net/projects/nsis/) and [WinSW](https://github.com/winsw/winsw)) for a SpringBoot project, and can build npm/front during packaging.
 
 SpringBoot options:
 
@@ -23,6 +23,7 @@ _This project can be related to the [linux-app-packager](https://github.com/hdsd
 - a SpringBoot project with the _SpringBoot maven plugin_
 - [NSIS 3+ version](https://sourceforge.net/projects/nsis/), or via `apt-get install nsis`, only for build Windows executables installers.
 - [WinSW 2+](https://github.com/winsw/winsw/releases), only for handled Windows services. Executable must be put on `scripts` directory.
+- npm, only if your project have an `package.json` on main dir.
 
 Not tested on macOS.
 
@@ -99,6 +100,14 @@ Usage for deploy to another root directory:
     ./myspringbootproject-1.2.3-run.sh -- -chroot "/opt"
 
 For update, just start the new builded package, it will detect and replace all needed files (and keep the actual log4j2 and application.yml configuration).
+
+### Front/npm setup
+
+It will only run `npm install` before start maven package, only if a `package.json` is founded on the main project directory.
+
+On builded project side, `npm install` _should_ run an `webpack` for a **production ready version front app** (minified, etc), and _should_ put finals files on `src/main/resources/static`. Maven and Spring Boot will collects these files during back building.
+
+No checks will be done on this project.
 
 ### Windows setup
 

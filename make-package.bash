@@ -4,12 +4,15 @@
 # USAGE
 # $0 <SpringBoot project path>
 # With export SKIP_BUILD=1 for skip maven build if the expected jar exists.
+# With export SKIP_NPM=1 for skip npm builds.
 # With export SKIP_LINUX=1 for skip Linux builds.
 
 set -eu
 
 MVN="mvn";
 MAVEN_OPTS=(--batch-mode -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true)
+NPM="npm";
+NPM_OPTS=(install);
 
 #####################
 # CHECK TOOL PRESENCE
@@ -94,6 +97,21 @@ for TPL_FILE in template/*; do
         echo "Copy $TPL_FILE_NAME to project $PROJECT_DIR, free feel to edit it (you must restart this script after)";
     fi
 done
+
+#############################
+# CHECK PACKAGE.JSON PRESENCE
+# AND BUILD FRONT
+#############################
+PACKAGE_JSON="$BASE_DIR/package.json";
+if [ -f "$PACKAGE_JSON" ] && [ "${SKIP_NPM:-"0"}" = "0" ]; then
+    if ! [ -x "$(command -v $NPM)" ]; then
+	    echo "Error: npm is not installed." >&2
+	    exit 4
+    fi
+    echo "Build front via \"$NPM ${NPM_OPTS[@]}\"";
+    echo "...";
+    "$NPM" --prefix "$BASE_DIR" "${NPM_OPTS[@]}" > /dev/null
+fi
 
 ##########################
 # IMPORT POM XML FILE VARS
