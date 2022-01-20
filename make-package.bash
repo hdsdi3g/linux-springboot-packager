@@ -195,7 +195,18 @@ fi
 # MANAGE DEFAULT APP CONF
 #########################
 PROJECT_APP_CONF="$PROJECT_DIR/application.yml";
+
+# GET EXAMPLE SAMPLE CONF
+ORIGINAL_EXAMPLE_CONF=$(find "$BASE_DIR" -not -path '*/.*' -not -path '*/node_modules/*' -not -path '*/target/*' -name "application.yml.example" | head -1);
+if [ -f "$ORIGINAL_EXAMPLE_CONF" ] ; then
+    if [ -f "$PROJECT_APP_CONF" ] ; then
+        rm -f "$PROJECT_APP_CONF"
+    fi
+    ln -s "$ORIGINAL_EXAMPLE_CONF" "$PROJECT_APP_CONF"
+fi
+
 if [ ! -f "$PROJECT_APP_CONF" ] ; then
+    # INJECT A GENERIC YML CONFIGURATION FILE FROM TEMPLATES/EXAMPLES
     PROJECT_APP_CONF="$PROJECT_DIR/application.yaml";
     if [ ! -f "$PROJECT_APP_CONF" ] ; then
         PROJECT_APP_CONF="$PROJECT_DIR/application.properties";
@@ -263,7 +274,7 @@ if [ "${SKIP_LINUX:-"0"}" = "0" ]; then
 
     scripts/makeself.sh \
         --lsm "$LSM_FILE" \
-        --tar-extra "--owner=root --group=root --no-xattrs --no-acls --no-selinux" \
+        --tar-extra "--owner=root --group=root --no-xattrs --no-acls --no-selinux --dereference" \
         --nocomp --nooverwrite \
         "$PROJECT_DIR" "$PACKAGE_FILE" "$LABEL" "./setup.sh"
     chmod +x "$PACKAGE_FILE"
