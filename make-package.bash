@@ -67,6 +67,7 @@ if [ ! -d "$BASE_DIR" ]; then
     echo "Directory $BASE_DIR don't exists" >&2;
     exit 2;
 fi
+BASE_DIR=$(realpath "$1");
 
 ########################
 # CHECK POM XML PRESENCE
