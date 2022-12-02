@@ -1,0 +1,27 @@
+[Unit]
+Description=@NAME@: @SHORT_DESCRIPTION@
+Documentation=man @SERVICE_NAME@
+Wants=network-online.target
+After=network-online.target syslog.target
+[Service]
+EnvironmentFile=@OUTPUT_ENV_FILE@
+WorkingDirectory=@OUTPUT_DIR_USER@
+ExecStart=@JAVA@ -noverify -server \
+    -Dfile.encoding=UTF-8 \
+    -Xms256m -Xmx1024m \
+    -XX:+ExitOnOutOfMemoryError \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=@OUTPUT_DIR_USER@ \
+    -XX:+UseGCOverheadLimit \
+    -Dlogging.config=@OUTPUT_LOGCONF_FILE@ \
+    -jar @OUTPUT_JAR_FILE@ \
+    --spring.config.location=@OUTPUT_APPCONF_FILE@
+SuccessExitStatus=143
+User=@SERVICE_USER_NAME@
+Group=@SERVICE_USER_NAME@
+StandardOutput=journal
+StandardError=journal
+TimeoutStopSec=30
+Restart=always
+[Install]
+WantedBy=multi-user.target

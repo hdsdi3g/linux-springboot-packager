@@ -1,20 +1,23 @@
 <service>
-  <id>APP_NAME</id>
-  <name>APP_LONG_NAME</name>
-  <description>APP_DESCR</description>
+  <id>@SERVICE_NAME@</id>
+  <name>@NAME@</name>
+  <description>@SHORT_DESCRIPTION@</description>
   <executable>java</executable>
   <arguments>
-    -Xms256m -Xmx1024m -XX:+ExitOnOutOfMemoryError -XX:+UseGCOverheadLimit
+    -Xms256m
+    -Xmx1024m
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+UseGCOverheadLimit
     -Dfile.encoding=UTF-8
-    -Dlogging.config="WORKING_PATH\log4j2.xml"
-    -Duser.dir="WORKING_PATH"
-    -jar "INSTDIR\app.jar"
-    --spring.config.location="WORKING_PATH\application.yml"
+    -Dlogging.config="C:\ProgramData\@OUTPUT_LOGCONF_NAME@"
+    -Duser.dir="C:\ProgramData"
+    -jar "C:\Program Files\@OUTPUT_JAR_NAME@"
+    --spring.config.location="C:\ProgramData\@OUTPUT_APPCONF_NAME@"
   </arguments>
   <delayedAutoStart>true</delayedAutoStart>
   <autoRefresh>true</autoRefresh>
   <startmode>Manual</startmode>
-  <logpath>WORKING_PATH</logpath>
+  <logpath>C:\ProgramData</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>10240</sizeThreshold>
     <keepFiles>8</keepFiles>

@@ -7,8 +7,8 @@
 		</Console>
 		<RollingFile
 				name="RollingAppender"
-				fileName="CONFIGURED_ROOT/var/log/APPLICATION_NAME/APPLICATION_NAME.log"
-				filePattern="CONFIGURED_ROOT/var/log/APPLICATION_NAME/APPLICATION_NAME-%d{yyyy-MM-dd}-%i.log.gz"
+				fileName="@OUTPUT_DIR_LOG@/@SERVICE_NAME@.log"
+				filePattern="@OUTPUT_DIR_LOG@/@SERVICE_NAME@-%d{yyyy-MM-dd}-%i.log.gz"
 				filePermissions="rw-------">
 			<PatternLayout pattern="%d{ISO8601} %-5p %c &#8249;%t&#8250; %m%n" />
 			<Policies>

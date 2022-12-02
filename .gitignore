@@ -1,13 +1,15 @@
-packages/*
-projects/*
-scripts/makeself.sh
-scripts/makeself-header.sh
+rpmbuild/
+exebuild/
 
 # Windows / macOS
 desktop.ini
 .DS_Store
 Thumbs.db
+
+# Executables
 *.exe
+*.rpm
+*.deb
 
 # VS Code
 .vscode/

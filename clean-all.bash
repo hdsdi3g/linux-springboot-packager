@@ -4,10 +4,10 @@ set -eu
 
 cd "$(dirname "$0")"
 
-if [ -d packages ]; then
-	rm -rf packages
+if [ -d exebuild ]; then
+	rm -rf exebuild
 fi
 
-if [ -d projects ]; then
-	rm -rf projects
+if [ -d rpmbuild ]; then
+	rm -rf rpmbuild
 fi
