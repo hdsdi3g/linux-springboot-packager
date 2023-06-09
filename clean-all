@@ -1,5 +1,5 @@
 #!/bin/bash
-#    search-winsw.bash - search the full path of WinSW executable
+#    clean-all.bash - remove all temp builds
 #
 #    Copyright (C) hdsdi3g for hd3g.tv 2022
 #
@@ -16,28 +16,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-#    Usage: search-winsw.bash
-#    It will return the full path of WinSW executable.
-#    Or it will fail with a error message.
-#
-#    shellcheck disable=SC1090,SC1091
+#    Usage: clean-all.bash
 
 set -eu
 
-PWD=$(dirname "$0");
-cd "$PWD"
-SEARCH_DIR=$(cd .. && pwd);
+cd "$(dirname "$0")"
 
-. consts.bash
+if [ -d exebuild ]; then
+	rm -rf exebuild
+fi
 
-declare -a POSSIBLE_NAMES=("WinSW.NET461.exe" "WinSW.NET4.exe" "WinSW.NET2.exe" "WinSW-x64.exe" "WinSW-x86.exe" )
-
-for name in "${POSSIBLE_NAMES[@]}"; do
-    if [ -f "$SEARCH_DIR/$name" ] ; then
-        echo "$SEARCH_DIR/$name";
-        exit 0;
-    fi
-done
-
-echo "Can't found WinSW executable, please download it, and put it on $SEARCH_DIR".
-exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
+if [ -d rpmbuild ]; then
+	rm -rf rpmbuild
+fi

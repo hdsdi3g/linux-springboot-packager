@@ -1,11 +1,30 @@
 #!/bin/bash
-# USAGE
-# make-exe <SpringBoot project path>
-# With export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
-# With export SKIP_BUILD=1 for skip maven build if the expected jar exists.
-# With export SKIP_NPM=1 for skip npm builds.
-# With export SKIP_CLEAN=1 for skip clean temp files/directories after build.
-# With export SKIP_MAKE=1 for skip to make EXE file, just let ready to build.
+#    make-exe - create Linux RPM packages based on Spring Boot applications
+#
+#    Copyright (C) hdsdi3g for hd3g.tv 2022
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or any
+#    later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+#    Usage: make-exe <SpringBoot project path>
+#
+#    with export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
+#    with export SKIP_BUILD=1 for skip maven build if the expected jar exists.
+#    with export SKIP_NPM=1 for skip npm builds.
+#    with export SKIP_CLEAN=1 for skip clean temp files/directories after build.
+#    with export SKIP_MAKE=1 for skip to make EXE file, just let ready to build.
+#
+#    shellcheck disable=SC1091
 
 set -eu
 
@@ -20,7 +39,7 @@ cd "$(dirname "$0")"
 if [ "$#" -eq 0 ]; then
     echo "Usage $0 <SpringBoot project path>" >&2;
     echo "The SpringBoot project path must be a Maven project (with pom.xml on root)" >&2;
-    exit $EXIT_CODE_MISSING_PROJECT;
+    exit "$EXIT_CODE_MISSING_PROJECT";
 fi
 
 # CHECK TOOL PRESENCE
@@ -38,7 +57,6 @@ def_windows_base_dir_vars;
 def_files_dir_vars;
 prepare_exe_build_dir;
 make_jar;
-FULL_CHANGELOG="";
 
 extract_default_app_conf;
 sed -i $'s/$/\r/' "$BUILD_DIR/$OUTPUT_APPCONF_FILE";
@@ -73,7 +91,7 @@ if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
 
     if [ ! -f "$OUT_EXE_FILE" ]; then
         echo "Can't found rpm file, expect: $OUT_EXE_FILE" >&2;
-        exit $EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT;
+        exit "$EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT";
     fi
 
     echo "";

@@ -1,11 +1,30 @@
 #!/bin/bash
-# USAGE
-# make-rpm <SpringBoot project path>
-# With export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
-# With export SKIP_BUILD=1 for skip maven build if the expected jar exists.
-# With export SKIP_NPM=1 for skip npm builds.
-# With export SKIP_CLEAN=1 for skip clean temp files/directories after build.
-# With export SKIP_MAKE=1 for skip to make RPM file, just let ready to build.
+#    make-rpm - create Windows setup program based on Spring Boot applications
+#
+#    Copyright (C) hdsdi3g for hd3g.tv 2022
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or any
+#    later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+#    Usage: make-rpm <SpringBoot project path>
+#
+#    with export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
+#    with export SKIP_BUILD=1 for skip maven build if the expected jar exists.
+#    with export SKIP_NPM=1 for skip npm builds.
+#    with export SKIP_CLEAN=1 for skip clean temp files/directories after build.
+#    with export SKIP_MAKE=1 for skip to make RPM file, just let ready to build.
+#
+#    shellcheck disable=SC1091
 
 set -eu
 
@@ -20,7 +39,7 @@ cd "$(dirname "$0")"
 if [ "$#" -eq 0 ]; then
     echo "Usage $0 <SpringBoot project path>" >&2;
     echo "The SpringBoot project path must be a Maven project (with pom.xml on root)" >&2;
-    exit $EXIT_CODE_MISSING_PROJECT;
+    exit "$EXIT_CODE_MISSING_PROJECT";
 fi
 
 # CHECK TOOL PRESENCE
@@ -32,7 +51,7 @@ check_rpmlint;
 check_pandoc;
 check_xmlstarlet;
 
-project_load_base_dir $1;
+project_load_base_dir "$1";
 make_front;
 load_mvn_vars;
 def_linux_base_dir_vars;
@@ -53,7 +72,7 @@ make_service_conf;
 
 RPM_VERSION="${VERSION//-/.}";
 {
-    echo "# AUTOMATICALLY GENERATED THE "$(LANG="en_US.UTF-8" date);
+    echo "# AUTOMATICALLY GENERATED THE ""$(LANG="en_US.UTF-8" date)";
     echo "%define _topdir      $(pwd)/$RPM_WORKING_DIR";
     echo "%define _arch       $ARCH";
     echo "BuildRoot:           %{buildroot}";
@@ -139,10 +158,10 @@ RPM_VERSION="${VERSION//-/.}";
     echo "%post -p /usr/bin/bash";
     # install $1 == 1
     # upgrade (new) $1 == 2
-    echo "[ \$1 = "1" ] && echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
-    echo "[ \$1 = "1" ] && ln -s $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK" | sed_usr_lib;
-    echo "[ \$1 = "1" ] && systemctl daemon-reload";
-    echo "[ \$1 = "1" ] && systemctl enable $ARTIFACTID";
+    echo "[ \$1 = 1 ] && echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
+    echo "[ \$1 = 1 ] && ln -s $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK" | sed_usr_lib;
+    echo "[ \$1 = 1 ] && systemctl daemon-reload";
+    echo "[ \$1 = 1 ] && systemctl enable $ARTIFACTID";
     echo "mandb -q";
     echo "echo \"Use man $ARTIFACTID to get setup informations.\"";
     if [ -f "$FULL_CHANGELOG" ]; then
@@ -169,8 +188,8 @@ RPM_VERSION="${VERSION//-/.}";
     # upgrade (old) $1 == 1
     # remove $1 == 0
     echo "mandb -q";
-    echo "[ \$1 -eq "0" ] && echo \"To clean-up this setup, you should remove $OUTPUT_DIR_CONF, $OUTPUT_DIR_USER, $OUTPUT_DIR_LOG\"." | sed_usr_lib;
-    echo "[ \$1 -eq "0" ] && echo \"And you can delete user and group $ARTIFACTID\".";
+    echo "[ \$1 -eq 0 ] && echo \"To clean-up this setup, you should remove $OUTPUT_DIR_CONF, $OUTPUT_DIR_USER, $OUTPUT_DIR_LOG\"." | sed_usr_lib;
+    echo "[ \$1 -eq 0 ] && echo \"And you can delete user and group $ARTIFACTID\".";
     echo "exit 0;";
     echo "";
 } > "$SPEC_FILE"
@@ -183,7 +202,7 @@ if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
     RPM_FILE="$RPM_WORKING_DIR/RPMS/$ARCH/$ARTIFACTID-$RPM_VERSION-$RELEASE.$ARCH.rpm";
     if [ ! -f "$RPM_FILE" ]; then
         echo "Can't found rpm file, expect: $RPM_FILE" >&2;
-        exit $EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT;
+        exit "$EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT";
     fi
     OUT_RPM_FILE="$ARTIFACTID-$VERSION.rpm";
     mv "$RPM_FILE" "$OUT_RPM_FILE";

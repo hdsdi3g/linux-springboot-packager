@@ -1,15 +1,37 @@
+#    project.bash - load all setups and builds functions used by make-XXX scripts
+#
+#    Copyright (C) hdsdi3g for hd3g.tv 2022
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or any
+#    later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+#    Usage: just source project.bash
+#
+#    shellcheck disable=SC2124
+
+
 function project_load_base_dir() {
     BASE_DIR="$1";
     if [ ! -d "$BASE_DIR" ]; then
         echo "Directory $BASE_DIR don't exists" >&2;
-        exit $EXIT_CODE_MISSING_PROJECT_DIR;
+        exit "$EXIT_CODE_MISSING_PROJECT_DIR";
     fi
     BASE_DIR=$(realpath "$1");
 
     MVN_POM="$BASE_DIR/pom.xml";
     if [ ! -f "$MVN_POM" ]; then
         echo "Can't found pom.xml in $BASE_DIR" >&2;
-        exit $EXIT_CODE_MISSING_POM;
+        exit "$EXIT_CODE_MISSING_POM";
     fi
 }
 
@@ -17,7 +39,7 @@ function make_front() {
     PACKAGE_JSON="$BASE_DIR/package.json";
     if [ -f "$PACKAGE_JSON" ] && [ "${SKIP_NPM:-"0"}" = "0" ]; then
         check_npm;
-        echo "Build front via \"$NPM ${NPM_OPTS[@]}\"";
+        echo "Build front via \"$NPM" "${NPM_OPTS[@]}" "\"";
         echo "...";
         "$NPM" --prefix "$BASE_DIR" "${NPM_OPTS[@]}" > /dev/null
     fi
@@ -30,18 +52,19 @@ function extract_var_from_pom() {
     RESULT=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" -t -m "$XPATH" -v . "$FILENAME" || echo "$DEFAULT_VALUE");
     if [ "$RESULT" = "" ]; then
         echo "Missing pom entry: $XPATH" | sed -e "s~x:~~g;s~//~/~g;" >&2
-        exit $EXIT_CODE_MISSING_POM_ENTRY;
+        exit "$EXIT_CODE_MISSING_POM_ENTRY";
     fi
-    echo $RESULT;
+    echo "$RESULT";
 }
 
 function load_mvn_vars() {
     set -eu
+    local TEMP_FULL_POM
     if [ "${SKIP_IMPORT_POM:-"0"}" = "0" ]; then
-        local TEMP_FULL_POM=$(mktemp -u)"-effective-pom.xml";
+        TEMP_FULL_POM=$(mktemp -u)"-effective-pom.xml";
     else
         mkdir -p "$BASE_DIR/target";
-        local TEMP_FULL_POM="$BASE_DIR/target/"$(basename $(dirname $MVN_POM))"-effective-pom.xml";
+        TEMP_FULL_POM="$BASE_DIR/target/$(basename "$(dirname "$MVN_POM")")-effective-pom.xml";
     fi
 
     if [ ! -f "$TEMP_FULL_POM" ]; then
@@ -50,7 +73,6 @@ function load_mvn_vars() {
     fi
 
     VERSION=$(extract_var_from_pom //x:project/x:version "$TEMP_FULL_POM" "");
-    GROUPID=$(extract_var_from_pom //x:project/x:groupId "$TEMP_FULL_POM" "");
     ARTIFACTID=$(extract_var_from_pom //x:project/x:artifactId "$TEMP_FULL_POM" "");
     PACKAGING=$(extract_var_from_pom //x:project/x:packaging "$TEMP_FULL_POM" "jar");
     NAME=$(extract_var_from_pom //x:project/x:name "$TEMP_FULL_POM" "");
@@ -225,7 +247,7 @@ function make_jar() {
 
     if [ ! -f "$SPRING_EXEC" ] ; then
         echo "Can't find maven compiled file: $SPRING_EXEC" >&2;
-        exit $EXIT_CODE_CANT_FOUND_JAR_FILE_OUTPUT;
+        exit "$EXIT_CODE_CANT_FOUND_JAR_FILE_OUTPUT";
     fi
     cp "$SPRING_EXEC" "$BUILD_DIR/$OUTPUT_JAR_FILE";
 }
@@ -246,7 +268,7 @@ function make_liquibase_changelog() {
         if [ ! -f "$FULL_CHANGELOG" ] ; then
             echo "Can't found $FULL_CHANGELOG used by Liquibase and created by tv.hd3g.mvnplugin.setupdb:archive." >&2;
             echo "Only default configuration is allowed here." >&2;
-            exit $EXIT_CODE_CANT_FOUND_LIQUIBASE_FILE_OUTPUT;
+            exit "$EXIT_CODE_CANT_FOUND_LIQUIBASE_FILE_OUTPUT";
         fi
 
         sed -e "$REPLACE" < "src/make-liquibase-secrets.bash" > "$BUILD_DIR/$OUTPUT_LIQUIBASESCRIPTCREDS_FILE"
@@ -260,9 +282,9 @@ function extract_default_app_conf() {
         echo "Use $DEFAULT_CONF as default configuration file, provided by project";
     else
         local SEARCH_EXTS=(yml yaml properties);
-        for EXT in ${SEARCH_EXTS[@]}; do
+        for EXT in "${SEARCH_EXTS[@]}"; do
             DEFAULT_CONF="$BASE_DIR/scripts/application-prod.$EXT";
-            if [ -f $DEFAULT_CONF ] ; then
+            if [ -f "$DEFAULT_CONF" ] ; then
                 echo "Use $DEFAULT_CONF as default configuration file, provided for production, by project";
                 exit 0;    
             fi
@@ -278,7 +300,7 @@ function extract_default_app_conf() {
     fi
     if [ ! -f "$DEFAULT_CONF" ] ; then
         echo "Can't found example configuration: $DEFAULT_CONF" >&2;
-        exit $EXIT_CODE_CANT_FOUND_DEFAULT_CONF;
+        exit "$EXIT_CODE_CANT_FOUND_DEFAULT_CONF";
     fi
 
     if [[ "$DEFAULT_CONF" == *"properties"* ]]; then
@@ -289,6 +311,7 @@ function extract_default_app_conf() {
     cp "$DEFAULT_CONF" "$BUILD_DIR/$OUTPUT_APPCONF_FILE";
 }
 
+
 function extract_default_linux_log_conf() {
     if [ -f "$BASE_DIR/scripts/log4j2-prod.xml" ] ; then
         echo "Found a default log4j2.xml provided by project";
@@ -298,7 +321,7 @@ function extract_default_linux_log_conf() {
     fi
     if [ ! -f "$DEFAULT_LOG_CONF" ] ; then
         echo "Can't found example log configuration: $DEFAULT_LOG_CONF";
-        exit $EXIT_CODE_CANT_FOUND_LOG_CONF;
+        exit "$EXIT_CODE_CANT_FOUND_LOG_CONF";
     fi
     sed -e "$REPLACE" < "$DEFAULT_LOG_CONF" > "$BUILD_DIR/$OUTPUT_LOGCONF_FILE"
 }
@@ -312,7 +335,7 @@ function extract_default_windows_log_conf() {
     fi
     if [ ! -f "$DEFAULT_LOG_CONF" ] ; then
         echo "Can't found example log configuration: $DEFAULT_LOG_CONF";
-        exit $EXIT_CODE_CANT_FOUND_LOG_CONF;
+        exit "$EXIT_CODE_CANT_FOUND_LOG_CONF";
     fi
     sed -e "$REPLACE" < "$DEFAULT_LOG_CONF" > "$BUILD_DIR/$OUTPUT_LOGCONF_FILE"
     sed -i $'s/$/\r/' "$BUILD_DIR/$OUTPUT_LOGCONF_FILE";
