@@ -86,6 +86,8 @@ function load_mvn_vars() {
     JAVA_VERSION=$(extract_var_from_pom //x:project/x:properties/x:java.version "$TEMP_FULL_POM" "8");
     ISSUE_MANAGEMENT_NAME=$(extract_var_from_pom //x:project/x:issueManagement/x:system "$TEMP_FULL_POM" "");
     ISSUE_MANAGEMENT_URL=$(extract_var_from_pom //x:project/x:issueManagement/x:url "$TEMP_FULL_POM" "");
+    LOGBACK_VERSION=$(extract_var_from_pom "//x:project/x:dependencies/x:dependency[x:scope='compile' and x:groupId='ch.qos.logback' and x:artifactId='logback-classic']/x:version" "$TEMP_FULL_POM" "$NOT_FOUND");
+    LOG4J2_VERSION=$(extract_var_from_pom "//x:project/x:dependencies/x:dependency[x:scope='compile' and x:groupId='org.apache.logging.log4j' and x:artifactId='log4j-api']/x:version" "$TEMP_FULL_POM" "$NOT_FOUND");
 
     if [ "${SKIP_IMPORT_POM:-"0"}" = "0" ]; then
         rm -f "$TEMP_FULL_POM";
@@ -121,7 +123,14 @@ function def_files_dir_vars() {
     OUTPUT_APPCONF_NAME="application.yml";
     OUTPUT_APPCONF_FILE="$OUTPUT_DIR_CONF/$OUTPUT_APPCONF_NAME";
 
-    OUTPUT_LOGCONF_NAME="log4j2.xml";
+    if [ "$LOGBACK_VERSION" != "$NOT_FOUND" ]; then
+        OUTPUT_LOGCONF_NAME="logback.xml";
+    elif [ "$LOG4J2_VERSION" != "$NOT_FOUND" ]; then
+        OUTPUT_LOGCONF_NAME="log4j2.xml";
+    else
+        echo "Can't found the application logger (log4j or logback)" >&2
+        exit "$EXIT_CODE_CANT_FOUND_APP_LOGGER";
+    fi
     OUTPUT_LOGCONF_FILE="$OUTPUT_DIR_CONF/$OUTPUT_LOGCONF_NAME";
 
     OUTPUT_MAN_NAME="$ARTIFACTID.8";
@@ -313,12 +322,14 @@ function extract_default_app_conf() {
 
 
 function extract_default_linux_log_conf() {
-    if [ -f "$BASE_DIR/scripts/log4j2-prod.xml" ] ; then
-        echo "Found a default log4j2.xml provided by project";
-        DEFAULT_LOG_CONF="$BASE_DIR/scripts/log4j2-prod.xml";
-    else
+    if [ "$LOGBACK_VERSION" != "$NOT_FOUND" ]; then
+        echo "Detect logback version $LOGBACK_VERSION on dependencies"
+        DEFAULT_LOG_CONF="src/logback-linux-prod.xml";
+    elif [ "$LOG4J2_VERSION" != "$NOT_FOUND" ]; then
+        echo "Detect log4j version $LOG4J2_VERSION on dependencies"
         DEFAULT_LOG_CONF="src/log4j2-linux-prod.xml";
     fi
+
     if [ ! -f "$DEFAULT_LOG_CONF" ] ; then
         echo "Can't found example log configuration: $DEFAULT_LOG_CONF";
         exit "$EXIT_CODE_CANT_FOUND_LOG_CONF";

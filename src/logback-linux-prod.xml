@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="Console OUT" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>
+                %-5level %logger{0} &#8249;%thread&#8250; %msg%n
+            </pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+    <appender name="LogFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>@OUTPUT_DIR_LOG@/@SERVICE_NAME@.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>@OUTPUT_DIR_LOG@/@SERVICE_NAME@-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+            <maxHistory>20</maxHistory>
+            <maxFileSize>50MB</maxFileSize>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{ISO8601} %-5level %logger{0} &#8249;%thread&#8250; %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.catalina.startup.DigesterFactory" level="error" />
+    <logger name="org.apache.catalina.util.LifecycleBase" level="error" />
+    <logger name="org.apache.coyote.http11.Http11NioProtocol" level="warn" />
+    <logger name="org.apache.sshd.common.util.SecurityUtils" level="warn" />
+    <logger name="org.apache.tomcat.util.net.NioSelectorPool" level="warn" />
+    <logger name="org.eclipse.jetty.util.component.AbstractLifeCycle" level="error" />
+    <logger name="org.hibernate.validator.internal.util.Version" level="warn" />
+    <logger name="org.springframework.boot.actuate.endpoint.jmx" level="warn" />
+    <logger name="org.apache.catalina.valves.AccessLogValve" level="trace" />
+
+    <root level="info">
+        <appender-ref ref="LogFile" />
+        <appender-ref ref="Console OUT" />
+    </root>
+</configuration>
