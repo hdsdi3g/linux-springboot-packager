@@ -19,7 +19,6 @@
 #
 #    shellcheck disable=SC2124
 
-
 function project_load_base_dir() {
     BASE_DIR="$1";
     if [ ! -d "$BASE_DIR" ]; then
@@ -137,8 +136,8 @@ function def_files_dir_vars() {
     OUTPUT_MAN_FILE="$OUTPUT_DIR_MAN/$OUTPUT_MAN_NAME";
     
     OUTPUT_SERVICE_NAME="$ARTIFACTID.service";
-    OUTPUT_SERVICE_FILE="$OUTPUT_DIR_APP/$OUTPUT_SERVICE_NAME";
-    OUTPUT_SERVICE_LINK="$OUTPUT_DIR_SYSTEMD/$OUTPUT_SERVICE_NAME";
+    OUTPUT_SERVICE_FILE="$OUTPUT_DIR_SYSTEMD/$OUTPUT_SERVICE_NAME";
+    OUTPUT_SERVICE_LINK="$OUTPUT_DIR_APP/$OUTPUT_SERVICE_NAME";
 
     OUTPUT_ENV_NAME="$ARTIFACTID";
     OUTPUT_ENV_FILE="$OUTPUT_DIR_DEFAUT/$OUTPUT_ENV_NAME";
@@ -158,13 +157,13 @@ function def_files_dir_vars() {
 
 function make_replace_list_vars() {
     local REPLACE_LIST=(
-        "s/@NAME@/$NAME/g;"
-        "s/@SHORT_DESCRIPTION@/$SHORT_DESCRIPTION/g;"
-        "s/@APP_NAME@/$ARTIFACTID/g;"
-        "s/@VERSION@/$VERSION/g;"
+        "s~@NAME@~$NAME~g;"
+        "s~@SHORT_DESCRIPTION@~$SHORT_DESCRIPTION~g;"
+        "s~@APP_NAME@~$ARTIFACTID~g;"
+        "s~@VERSION@~$VERSION~g;"
         "s~@JAVA@~$JAVA~g;"
-        "s/@SERVICE_NAME@/$ARTIFACTID/g;"
-        "s/@SERVICE_USER_NAME@/$ARTIFACTID/g;"
+        "s~@SERVICE_NAME@~$ARTIFACTID~g;"
+        "s~@SERVICE_USER_NAME@~$ARTIFACTID~g;"
         "s~@SERVICE_FILE@~/etc/systemd/system/$ARTIFACTID.service~g;"
         "s~@USER_HOME_DIR@~$OUTPUT_DIR_USER~g;"
         "s~@ISSUE_MANAGEMENT_NAME@~$ISSUE_MANAGEMENT_NAME~g;"
@@ -214,9 +213,8 @@ function make_replace_list_vars() {
 }
 
 function prepare_rpm_build_dir() {
-    if [ -d "$RPM_WORKING_DIR" ]; then
-        rm -rf "$RPM_WORKING_DIR"
-    fi
+    RPM_WORKING_DIR=$(mktemp -u -d -t "lsbp_RPM_""$ARTIFACTID""_XXXXXX");
+    echo "Working dir: $RPM_WORKING_DIR";
     mkdir -p "$RPM_WORKING_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
     BUILD_DIR="$RPM_WORKING_DIR/BUILD";
 
@@ -229,9 +227,8 @@ function prepare_rpm_build_dir() {
 }
 
 function prepare_exe_build_dir() {
-    if [ -d "$EXE_WORKING_DIR" ]; then
-        rm -rf "$EXE_WORKING_DIR"
-    fi
+    EXE_WORKING_DIR=$(mktemp -u -d -t "lsbp__EXE_""$ARTIFACTID""_XXXXXX");
+    echo "Working dir: $EXE_WORKING_DIR";
     mkdir -p "$EXE_WORKING_DIR"
     BUILD_DIR="$EXE_WORKING_DIR";
 
@@ -262,7 +259,6 @@ function make_jar() {
 }
 
 function make_liquibase_changelog() {
-    FULL_CHANGELOG="";
     local EXPECTED_CHANGELOG="$BASE_DIR/scripts/db/database-changelog.xml";
     if [ -f "$EXPECTED_CHANGELOG" ] ; then
         FULL_CHANGELOG="$MVN_TARGET/database-full-archive-changelog.xml";
@@ -280,7 +276,7 @@ function make_liquibase_changelog() {
             exit "$EXIT_CODE_CANT_FOUND_LIQUIBASE_FILE_OUTPUT";
         fi
 
-        sed -e "$REPLACE" < "src/make-liquibase-secrets.bash" > "$BUILD_DIR/$OUTPUT_LIQUIBASESCRIPTCREDS_FILE"
+        sed -e "$REPLACE" < "$TEMPLATES_DIR/make-liquibase-secrets.bash" > "$BUILD_DIR/$OUTPUT_LIQUIBASESCRIPTCREDS_FILE"
         cp "$FULL_CHANGELOG" "$BUILD_DIR/$OUTPUT_LIQUIBASEXML_FILE";
     fi
 }
@@ -301,10 +297,10 @@ function extract_default_app_conf() {
 
         if [ -f "$FULL_CHANGELOG" ] ; then
             echo "Can't found a default application.yml|yaml|properties provided by the project, use a template (persistence) example.";
-            DEFAULT_CONF="src/application-prod-persistence.yml";
+            DEFAULT_CONF="$TEMPLATES_DIR/application-prod-persistence.yml";
         else
             echo "Can't found a default application.yml|yaml|properties provided by the project, use a template example.";
-            DEFAULT_CONF="src/application-prod.yml";
+            DEFAULT_CONF="$TEMPLATES_DIR/application-prod.yml";
         fi
     fi
     if [ ! -f "$DEFAULT_CONF" ] ; then
@@ -324,10 +320,10 @@ function extract_default_app_conf() {
 function extract_default_linux_log_conf() {
     if [ "$LOGBACK_VERSION" != "$NOT_FOUND" ]; then
         echo "Detect logback version $LOGBACK_VERSION on dependencies"
-        DEFAULT_LOG_CONF="src/logback-linux-prod.xml";
+        DEFAULT_LOG_CONF="$TEMPLATES_DIR/logback-linux-prod.xml";
     elif [ "$LOG4J2_VERSION" != "$NOT_FOUND" ]; then
         echo "Detect log4j version $LOG4J2_VERSION on dependencies"
-        DEFAULT_LOG_CONF="src/log4j2-linux-prod.xml";
+        DEFAULT_LOG_CONF="$TEMPLATES_DIR/log4j2-linux-prod.xml";
     fi
 
     if [ ! -f "$DEFAULT_LOG_CONF" ] ; then
@@ -342,7 +338,7 @@ function extract_default_windows_log_conf() {
         echo "Found a default log4j2.xml provided by project";
         DEFAULT_LOG_CONF="$BASE_DIR/scripts/log4j2-windows-prod.xml";
     else
-        DEFAULT_LOG_CONF="src/log4j2-windows-prod.xml";
+        DEFAULT_LOG_CONF="$TEMPLATES_DIR/log4j2-windows-prod.xml";
     fi
     if [ ! -f "$DEFAULT_LOG_CONF" ] ; then
         echo "Can't found example log configuration: $DEFAULT_LOG_CONF";
@@ -353,29 +349,29 @@ function extract_default_windows_log_conf() {
 }
 
 function make_man_page() {
-    sed -e "$REPLACE" < "src/template-man.md" | pandoc -s -t man -o "$BUILD_DIR/$OUTPUT_MAN_FILE"
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/template-man.md" | pandoc -s -t man -o "$BUILD_DIR/$OUTPUT_MAN_FILE"
 }
 
 function make_html_doc_page() {
     OUTPUT_MAN_FILE="$ARTIFACTID.html";
-    sed -e "$REPLACE" < "src/template-man.md" | pandoc -s -t html -o "$BUILD_DIR/$OUTPUT_MAN_FILE"
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/template-man.md" | pandoc -s -t html -o "$BUILD_DIR/$OUTPUT_MAN_FILE"
 }
 
 function make_service_conf() {
-    sed -e "$REPLACE" < "src/systemd.service" > "$BUILD_DIR/$OUTPUT_SERVICE_FILE"
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/systemd.service" > "$BUILD_DIR/$OUTPUT_SERVICE_FILE"
     echo "#ENV CONF FOR $NAME" > "$BUILD_DIR/$OUTPUT_ENV_FILE";
 }
 
 function make_winsw_conf() {
     OUTPUT_SERVICE_FILE="winsw.xml";
-    sed -e "$REPLACE" < "src/servicewinsw.xml" > "$BUILD_DIR/$OUTPUT_SERVICE_FILE";
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/servicewinsw.xml" > "$BUILD_DIR/$OUTPUT_SERVICE_FILE";
     sed -i $'s/$/\r/' "$BUILD_DIR/$OUTPUT_SERVICE_FILE";
 }
 
 function make_nsi_conf() {
     WINSW_EXEC_PATH="$1";
     OUTPUT_NSI_FILE="builder.nsi";
-    sed -e "$REPLACE" < "src/builder.nsi" > "$BUILD_DIR/$OUTPUT_NSI_FILE";
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/builder.nsi" > "$BUILD_DIR/$OUTPUT_NSI_FILE";
     sed -i "s~@WINSW_EXEC_PATH@~$WINSW_EXEC_PATH~g;" "$BUILD_DIR/$OUTPUT_NSI_FILE";
     sed -i "s~@BUILD_DIR@~$(realpath "$BUILD_DIR")~g;" "$BUILD_DIR/$OUTPUT_NSI_FILE";
 }
@@ -405,5 +401,14 @@ function clean_after_build() {
             echo "Delete temp (working dir): $TEMP_DIR";
             rm -rf "$TEMP_DIR"
         fi
+    fi
+}
+
+function check_destination_dir() {
+    BUILD_DESTINATION_DIR="${2:-"."}";
+    BUILD_DESTINATION_DIR=$(realpath "$BUILD_DESTINATION_DIR");
+    if [ ! -d "$BUILD_DESTINATION_DIR" ]; then
+        echo "Can't found destination directory: $BUILD_DESTINATION_DIR" >&2;
+        exit "$EXIT_CODE_CANT_FOUND_DEST_DIR";
     fi
 }

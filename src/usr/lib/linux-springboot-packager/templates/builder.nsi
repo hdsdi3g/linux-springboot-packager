@@ -1,7 +1,7 @@
 Unicode True
 !define REGEDIT_UNINSTALL "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\@APP_NAME@"
 
-Outfile "..\@APP_NAME@-v@VERSION@-setup.exe"
+Outfile "@APP_NAME@-v@VERSION@-setup.exe"
 InstallDir "${OUTPUT_DIR_APP}"
 
 Name "@NAME@ @VERSION@"
@@ -19,8 +19,7 @@ CreateDirectory ${OUTPUT_DIR_USER}
 # ADD winsw.xml
 File "@BUILD_DIR@/winsw.xml"
 
-# ADD log4j2-example.xml
-File "/oname=${OUTPUT_DIR_USER}\log4j2-example.xml" "@BUILD_DIR@/log4j2.xml"
+File "/oname=${OUTPUT_DIR_USER}\logback-example.xml" "@BUILD_DIR@/logback.xml"
 
 # ADD application-example.yml
 File "/oname=${OUTPUT_DIR_USER}\application-example.yml" "@BUILD_DIR@/application.yml"

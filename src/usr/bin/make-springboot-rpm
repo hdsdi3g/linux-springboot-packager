@@ -1,5 +1,5 @@
 #!/bin/bash
-#    make-rpm - create Windows setup program based on Spring Boot applications
+#    make-springboot-rpm - create Windows setup program based on Spring Boot applications
 #
 #    Copyright (C) hdsdi3g for hd3g.tv 2022
 #
@@ -16,24 +16,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-#    Usage: make-rpm <SpringBoot project path>
+#    Usage: make-springboot-rpm <SpringBoot project path> [<destination directory to put exe file>]
 #
 #    with export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
 #    with export SKIP_BUILD=1 for skip maven build if the expected jar exists.
 #    with export SKIP_NPM=1 for skip npm builds.
 #    with export SKIP_CLEAN=1 for skip clean temp files/directories after build.
 #    with export SKIP_MAKE=1 for skip to make RPM file, just let ready to build.
+#    with export PREFIX=/somewhere to chroot the app files search
 #
 #    shellcheck disable=SC1091
 
 set -eu
 
-cd "$(dirname "$0")"
+PREFIX="${PREFIX:-"/"}";
+INCLUDE_DIR="$PREFIX/usr/lib/linux-springboot-packager/include";
 
 # LOAD BUILD DEPS
-. src/tools/consts.bash
-. src/tools/checktools.bash
-. src/tools/project.bash
+. "$INCLUDE_DIR/consts.bash"
+. "$INCLUDE_DIR/checktools.bash"
+. "$INCLUDE_DIR/project.bash"
 
 # CHECK PARAM PRESENCE
 if [ "$#" -eq 0 ]; then
@@ -43,6 +45,7 @@ if [ "$#" -eq 0 ]; then
 fi
 
 # CHECK TOOL PRESENCE
+check_mktemp;
 check_maven;
 check_realpath;
 check_basename;
@@ -51,30 +54,45 @@ check_rpmlint;
 check_pandoc;
 check_xmlstarlet;
 
+echo " * Check destination dir";
+check_destination_dir "$@";
+echo " * Load project";
 project_load_base_dir "$1";
+echo " * Make front (if needed)";
 make_front;
+echo " * Load maven vars";
 load_mvn_vars;
+echo " * Def Linux base dir vars";
 def_linux_base_dir_vars;
+echo " * Def file/dir vars";
 def_files_dir_vars;
+echo " * Prepare RPM build dir";
 prepare_rpm_build_dir;
 
+echo " * Make jar file";
 make_jar;
+echo " * Make liquibase changelog";
 make_liquibase_changelog;
+echo " * Extract default app conf";
 extract_default_app_conf;
+echo " * Extract information files";
 extract_information_files;
+echo " * Apply templates";
 make_replace_list_vars;
+echo " * Extract linux log conf";
 extract_default_linux_log_conf;
 
 make_man_page;
 SPEC_FILE="$RPM_WORKING_DIR/SPECS/$ARTIFACTID.spec";
 
+echo " * Make service conf";
 make_service_conf;
 
 RPM_VERSION="${VERSION//-/.}";
 {
     echo "# AUTOMATICALLY GENERATED THE ""$(LANG="en_US.UTF-8" date)";
-    echo "%define _topdir      $(pwd)/$RPM_WORKING_DIR";
-    echo "%define _arch       $ARCH";
+    echo "%define _topdir      $RPM_WORKING_DIR";
+    echo "%define _arch        $ARCH";
     echo "BuildRoot:           %{buildroot}";
     echo "Summary:             $NAME: $SHORT_DESCRIPTION";
     echo "License:             $LICENCE";
@@ -147,8 +165,8 @@ RPM_VERSION="${VERSION//-/.}";
     echo "%pre -p /usr/bin/bash";
     # install $1 == 1
     # upgrade (new) $1 == 2
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < src/stop-service.inc.sh
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < src/create-user.inc.sh
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/create-user.inc.sh"
     echo "exit 0;";
     echo "";
 
@@ -176,8 +194,8 @@ RPM_VERSION="${VERSION//-/.}";
     echo "%preun -p /usr/bin/bash";
     # upgrade (old) $1 == 1
     # remove $1 == 0
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < src/stop-service.inc.sh
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < src/disable-service.inc.sh
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh"
     echo "exit 0;";
     echo "";
 
@@ -204,7 +222,7 @@ if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
         echo "Can't found rpm file, expect: $RPM_FILE" >&2;
         exit "$EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT";
     fi
-    OUT_RPM_FILE="$ARTIFACTID-$VERSION.rpm";
+    OUT_RPM_FILE="$BUILD_DESTINATION_DIR/$ARTIFACTID-$VERSION.rpm";
     mv "$RPM_FILE" "$OUT_RPM_FILE";
 
     clean_after_build "$RPM_WORKING_DIR";

@@ -1,5 +1,5 @@
 #!/bin/bash
-#    search-winsw.bash - search the full path of WinSW executable
+#    disable-service.inc.sh - disable systemctl service based on SERVICE_NAME variable.
 #
 #    Copyright (C) hdsdi3g for hd3g.tv 2022
 #
@@ -16,28 +16,19 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-#    Usage: search-winsw.bash
-#    It will return the full path of WinSW executable.
-#    Or it will fail with a error message.
+#    Usage: run it via a package setup ; it's just a template file.
 #
-#    shellcheck disable=SC1090,SC1091
+#    With RPM parameters:
+#    0 remove
+#    1 install
+#    1 upgrade old uninstall
+#    2 upgrade new install
 
-set -eu
-
-PWD=$(dirname "$0");
-cd "$PWD"
-SEARCH_DIR=$(cd .. && pwd);
-
-. consts.bash
-
-declare -a POSSIBLE_NAMES=("WinSW.NET461.exe" "WinSW.NET4.exe" "WinSW.NET2.exe" "WinSW-x64.exe" "WinSW-x86.exe" )
-
-for name in "${POSSIBLE_NAMES[@]}"; do
-    if [ -f "$SEARCH_DIR/$name" ] ; then
-        echo "$SEARCH_DIR/$name";
-        exit 0;
+if [ "$1" -eq "0" ]; then
+    # 0 remove
+    COUNT_SERVICE_ENABLED=$(systemctl list-unit-files --state=enabled | grep -c @SERVICE_NAME@);
+    if [ "$COUNT_SERVICE_ENABLED" -gt "0" ]; then
+        echo "Service @SERVICE_NAME@ is enabled: disable it.";
+        systemctl disable "@SERVICE_NAME@"
     fi
-done
-
-echo "Can't found WinSW executable, please download it, and put it on $SEARCH_DIR".
-exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
+fi

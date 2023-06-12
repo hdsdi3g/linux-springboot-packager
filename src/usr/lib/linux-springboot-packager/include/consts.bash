@@ -20,8 +20,10 @@
 #
 #    shellcheck disable=SC2034
 
+TEMPLATES_DIR="$PREFIX/usr/lib/linux-springboot-packager/templates";
+
 MVN="mvn";
-MAVEN_OPTS=(--batch-mode -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true)
+MAVEN_OPTS=(--batch-mode -Dagent=false -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -Dlicense.skipAddThirdParty=true)
 NPM="npm";
 NPM_OPTS=(install);
 ARCH="noarch";
@@ -29,9 +31,10 @@ RELEASE=$(LANG="en_US.UTF-8" date '+%Y%m%d%H%M%S');
 NOW=$(LANG="en_US.UTF-8" date);
 SHORT_DATE=$(LANG="en_US.UTF-8" date +"%m/%d/%Y");
 JAVA="/usr/bin/java";
-RPM_WORKING_DIR="rpmbuild";
-EXE_WORKING_DIR="exebuild";
 NOT_FOUND="NOT_FOUND";
+RPM_WORKING_DIR_BASE_NAME="rpmbuild";
+EXE_WORKING_DIR_BASE_NAME="exebuild";
+FULL_CHANGELOG="";
 
 EXIT_CODE_MISSING_DEPENDENCY_COMMAND="1";
 EXIT_CODE_MISSING_PROJECT="2";
@@ -44,3 +47,4 @@ EXIT_CODE_CANT_FOUND_DEFAULT_CONF="8";
 EXIT_CODE_CANT_FOUND_LOG_CONF="9";
 EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT="10";
 EXIT_CODE_CANT_FOUND_APP_LOGGER="11";
+EXIT_CODE_CANT_FOUND_DEST_DIR="12";

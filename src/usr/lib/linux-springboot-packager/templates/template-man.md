@@ -8,7 +8,7 @@
 # SYNOPSIS
 **runuser** -u @SERVICE_USER_NAME@ \-\- /usr/bin/java -Dlogging.config=@OUTPUT_LOGCONF_FILE@ -jar @OUTPUT_JAR_FILE@ \-\-spring.config.location=@OUTPUT_APPCONF_FILE@
 
-Or via the integrated Systemd service, deployed on *@OUTPUT_SERVICE_LINK@*.
+Or via the integrated Systemd service, deployed on *@OUTPUT_SERVICE_FILE@*.
 
 The installer, by default, enable the service, but not start it.
 
@@ -54,9 +54,7 @@ The package deploy all this files:
 
 *@OUTPUT_LOGCONF_FILE@* the logging configuration (logs), apart from this made by the system
 
-*@OUTPUT_SERVICE_FILE@* the Systemd service file provided with the application
-
-*@OUTPUT_SERVICE_LINK@* the symbolic link that points to it in the system configuration 
+*@OUTPUT_SERVICE_FILE@* the Systemd service file provided with the application in the system configuration 
 
 *@OUTPUT_ENV_FILE@* the environment file for the service 
 
@@ -91,4 +89,4 @@ This application was writted by **@AUTHOR_NAME@** (@AUTHOR_EMAIL@) for **@ORG_NA
 See the project's home page: *@URL@*
 
 # NOTES
-This document was auto-generated the **@NOW@**, for the version *@VERSION@*.
+This document was auto-generated the **@NOW@**, for the version *@VERSION@*, by **linux-springboot-packager**.

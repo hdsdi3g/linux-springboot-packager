@@ -1,5 +1,14 @@
-rpmbuild/
-exebuild/
+rpm-qlp.txt
+rpm-qi.txt
+rpmbuild/BUILDROOT
+make-springboot-rpm.1
+make-springboot-exe.1
+search-winsw.bash.1
+
+# Maven
+target/
+!**/src/main/**
+!**/src/test/**
 
 # Windows / macOS
 desktop.ini
@@ -14,3 +23,12 @@ Thumbs.db
 # VS Code
 .vscode/
 *.code-workspace
+
+# STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache

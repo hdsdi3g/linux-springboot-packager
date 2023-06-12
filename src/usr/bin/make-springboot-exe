@@ -1,5 +1,5 @@
 #!/bin/bash
-#    make-exe - create Linux RPM packages based on Spring Boot applications
+#    make-springboot-exe - create Linux RPM packages based on Spring Boot applications
 #
 #    Copyright (C) hdsdi3g for hd3g.tv 2022
 #
@@ -16,24 +16,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-#    Usage: make-exe <SpringBoot project path>
+#    Usage: make-springboot-exe <SpringBoot project path> [<destination directory to put exe file>]
 #
 #    with export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
 #    with export SKIP_BUILD=1 for skip maven build if the expected jar exists.
 #    with export SKIP_NPM=1 for skip npm builds.
 #    with export SKIP_CLEAN=1 for skip clean temp files/directories after build.
 #    with export SKIP_MAKE=1 for skip to make EXE file, just let ready to build.
+#    with export PREFIX=/somewhere to chroot the app files search
 #
 #    shellcheck disable=SC1091
 
 set -eu
 
-cd "$(dirname "$0")"
+PREFIX="${PREFIX:-"/"}";
+INCLUDE_DIR="$PREFIX/usr/lib/linux-springboot-packager/include";
 
 # LOAD BUILD DEPS
-. src/tools/consts.bash
-. src/tools/checktools.bash
-. src/tools/project.bash
+. "$INCLUDE_DIR/consts.bash"
+. "$INCLUDE_DIR/checktools.bash"
+. "$INCLUDE_DIR/project.bash"
 
 # CHECK PARAM PRESENCE
 if [ "$#" -eq 0 ]; then
@@ -43,6 +45,7 @@ if [ "$#" -eq 0 ]; then
 fi
 
 # CHECK TOOL PRESENCE
+check_mktemp;
 check_maven;
 check_realpath;
 check_basename;
@@ -50,7 +53,8 @@ check_makensis;
 check_pandoc;
 check_xmlstarlet;
 
-project_load_base_dir $1;
+check_destination_dir "$@";
+project_load_base_dir "$1";
 make_front;
 load_mvn_vars;
 def_windows_base_dir_vars;
@@ -73,10 +77,10 @@ make_replace_list_vars;
 extract_default_windows_log_conf;
 # make_html_doc_page; only for linux systemd...
 make_winsw_conf;
-make_nsi_conf "$(bash src/tools/search-winsw.bash)";
+make_nsi_conf "$(bash "$PREFIX/usr/bin/search-winsw.bash")";
 
 if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
-    OUT_EXE_FILE="$ARTIFACTID-v$VERSION-setup.exe";
+    OUT_EXE_FILE="$BUILD_DESTINATION_DIR/$ARTIFACTID-v$VERSION-setup.exe";
     if [ -f "$OUT_EXE_FILE" ]; then
         rm -f "$OUT_EXE_FILE";
     fi
@@ -87,12 +91,14 @@ if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
         -DOUTPUT_DIR_USER="$OUTPUT_DIR_USER" \
         -INPUTCHARSET UTF8 -WX \
         "$BUILD_DIR/$OUTPUT_NSI_FILE"
-    clean_after_build "$EXE_WORKING_DIR";
 
-    if [ ! -f "$OUT_EXE_FILE" ]; then
-        echo "Can't found rpm file, expect: $OUT_EXE_FILE" >&2;
+    TEMP_OUT_EXE_FILE="$BUILD_DIR/$ARTIFACTID-v$VERSION-setup.exe";
+    if [ ! -f "$TEMP_OUT_EXE_FILE" ]; then
+        echo "Can't found exe file, expect: $TEMP_OUT_EXE_FILE" >&2;
         exit "$EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT";
     fi
+    mv "$TEMP_OUT_EXE_FILE" "$OUT_EXE_FILE";
+    clean_after_build "$EXE_WORKING_DIR";
 
     echo "";
     echo "Now, you can use $OUT_EXE_FILE on a Windows host."

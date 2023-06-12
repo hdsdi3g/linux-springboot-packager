@@ -18,6 +18,13 @@
 #
 #    Usage: just source checktools.bash
 
+function check_mktemp() {
+    if ! [ -x "$(command -v mktemp)" ]; then
+	    echo "Error: mktemp is not installed." >&2
+	    exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
+    fi
+}
+
 function check_basename() {
     if ! [ -x "$(command -v basename)" ]; then
 	    echo "Error: basename is not installed." >&2
@@ -33,7 +40,7 @@ function check_realpath() {
 }
 
 function check_maven() {
-    if ! [ -x "$(command -v $MVN)" ]; then
+    if ! [ -x "$(command -v "$MVN")" ]; then
         echo "Can't found $MVN!" >&2;
         echo "Please setup maven" >&2;
 	    exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
