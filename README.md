@@ -3,7 +3,7 @@
 This script collection will create:
  - a [RPM package](man-make-springboot-rpm.md)
  - a [Windows self installer](man-make-springboot-exe.md) (via [NSIS](https://sourceforge.net/projects/nsis/) and [WinSW](https://github.com/winsw/winsw))
- - a [RPM setup file this scripts collection](#how-to-make-a-rpm-installer-for-this-app)
+ - a [RPM file to install this scripts collection](#how-to-make-a-rpm-installer-for-this-app)
 
 For a **Spring Boot** project, runned as service, and build npm/front during packaging.
 

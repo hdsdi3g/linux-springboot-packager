@@ -78,7 +78,7 @@ assert_contain "/usr/lib/demospringboot";
 assert_contain "/usr/lib/demospringboot/THIRD-PARTY.txt";
 assert_contain "/usr/lib/demospringboot/LICENCE.txt";
 assert_contain "/usr/lib/demospringboot/demospringboot-bin.jar";
-assert_contain "/usr/lib/demospringboot/demospringboot.service";
+assert_contain "/etc/systemd/system/demospringboot.service";
 assert_contain "/usr/local/share/man/man8/demospringboot.8";
 assert_contain "/var/log/demospringboot";
 
