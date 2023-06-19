@@ -11,6 +11,8 @@ Via _bash_, on Linux (RHEL/Debian) and Windows/WSL, not tested on macOS.
 
 **See the md/man files on the project root for more informations.**
 
+[![Tests on Ubuntu](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/tests-ubuntu.yml/badge.svg)](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/tests-ubuntu.yml)
+
 ## make-springboot-rpm
 
 For build RPMs files, you will need, in addition to `maven` and `java`:
