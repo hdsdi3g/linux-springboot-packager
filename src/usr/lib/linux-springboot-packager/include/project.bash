@@ -142,13 +142,6 @@ function def_files_dir_vars() {
     OUTPUT_ENV_NAME="$ARTIFACTID";
     OUTPUT_ENV_FILE="$OUTPUT_DIR_DEFAUT/$OUTPUT_ENV_NAME";
 
-    OUTPUT_LIQUIBASEXML_NAME="full-changelog-$ARTIFACTID-$VERSION.xml";
-    OUTPUT_LIQUIBASEXML_FILE="$OUTPUT_DIR_APP/$OUTPUT_LIQUIBASEXML_NAME";
-    OUTPUT_LIQUIBASECREDS_NAME="liquibase-database-credentials.inc.bash";
-    OUTPUT_LIQUIBASECREDS_FILE="$OUTPUT_DIR_CONF/$OUTPUT_LIQUIBASECREDS_NAME";
-    OUTPUT_LIQUIBASESCRIPTCREDS_NAME="make-liquibase-secrets.bash";
-    OUTPUT_LIQUIBASESCRIPTCREDS_FILE="$OUTPUT_DIR_APP/$OUTPUT_LIQUIBASESCRIPTCREDS_NAME";
-
     OUTPUT_LICENCE_NAME="LICENCE.txt";
     OUTPUT_LICENCE_FILE="$OUTPUT_DIR_APP/$OUTPUT_LICENCE_NAME";
     OUTPUT_THIRDPARTY_NAME="THIRD-PARTY.txt";
@@ -197,12 +190,6 @@ function make_replace_list_vars() {
         "s~@OUTPUT_SERVICE_LINK@~$OUTPUT_SERVICE_LINK~g;"
         "s~@OUTPUT_ENV_NAME@~$OUTPUT_ENV_NAME~g;"
         "s~@OUTPUT_ENV_FILE@~$OUTPUT_ENV_FILE~g;"
-        "s~@OUTPUT_LIQUIBASEXML_NAME@~$OUTPUT_LIQUIBASEXML_NAME~g;"
-        "s~@OUTPUT_LIQUIBASEXML_FILE@~$OUTPUT_LIQUIBASEXML_FILE~g;"
-        "s~@OUTPUT_LIQUIBASECREDS_NAME@~$OUTPUT_LIQUIBASECREDS_NAME~g;"
-        "s~@OUTPUT_LIQUIBASECREDS_FILE@~$OUTPUT_LIQUIBASECREDS_FILE~g;"
-        "s~@OUTPUT_LIQUIBASESCRIPTCREDS_NAME@~$OUTPUT_LIQUIBASESCRIPTCREDS_NAME~g;"
-        "s~@OUTPUT_LIQUIBASESCRIPTCREDS_FILE@~$OUTPUT_LIQUIBASESCRIPTCREDS_FILE~g;"
         "s~@OUTPUT_LICENCE_NAME@~$OUTPUT_LICENCE_NAME~g;"
         "s~@OUTPUT_LICENCE_FILE@~$OUTPUT_LICENCE_FILE~g;"
         "s~@OUTPUT_THIRDPARTY_NAME@~$OUTPUT_THIRDPARTY_NAME~g;"
@@ -258,29 +245,6 @@ function make_jar() {
     cp "$SPRING_EXEC" "$BUILD_DIR/$OUTPUT_JAR_FILE";
 }
 
-function make_liquibase_changelog() {
-    local EXPECTED_CHANGELOG="$BASE_DIR/scripts/db/database-changelog.xml";
-    if [ -f "$EXPECTED_CHANGELOG" ] ; then
-        FULL_CHANGELOG="$MVN_TARGET/database-full-archive-changelog.xml";
-
-        if [ -f "$FULL_CHANGELOG" ] && [ "${SKIP_BUILD:-"0"}" = "1" ] ; then
-            echo "Skip Maven remake setupdb archive xml file"
-        else
-            echo "Start Maven: make setupdb archive xml file..."
-            $MVN -f "$MVN_POM" "${MAVEN_OPTS[@]}" setupdb:archive
-        fi
-
-        if [ ! -f "$FULL_CHANGELOG" ] ; then
-            echo "Can't found $FULL_CHANGELOG used by Liquibase and created by tv.hd3g.mvnplugin.setupdb:archive." >&2;
-            echo "Only default configuration is allowed here." >&2;
-            exit "$EXIT_CODE_CANT_FOUND_LIQUIBASE_FILE_OUTPUT";
-        fi
-
-        sed -e "$REPLACE" < "$TEMPLATES_DIR/make-liquibase-secrets.bash" > "$BUILD_DIR/$OUTPUT_LIQUIBASESCRIPTCREDS_FILE"
-        cp "$FULL_CHANGELOG" "$BUILD_DIR/$OUTPUT_LIQUIBASEXML_FILE";
-    fi
-}
-
 function extract_default_app_conf() {
     DEFAULT_CONF=$(find "$BASE_DIR" -not -path '*/.*' -not -path '*/node_modules/*' -not -path '*/target/*' -name "application.yml.example" | head -1);
     if [ -f "$DEFAULT_CONF" ] ; then
@@ -294,14 +258,8 @@ function extract_default_app_conf() {
                 exit 0;    
             fi
         done
-
-        if [ -f "$FULL_CHANGELOG" ] ; then
-            echo "Can't found a default application.yml|yaml|properties provided by the project, use a template (persistence) example.";
-            DEFAULT_CONF="$TEMPLATES_DIR/application-prod-persistence.yml";
-        else
-            echo "Can't found a default application.yml|yaml|properties provided by the project, use a template example.";
-            DEFAULT_CONF="$TEMPLATES_DIR/application-prod.yml";
-        fi
+        echo "Can't found a default application.yml|yaml|properties provided by the project, use a template example.";
+        DEFAULT_CONF="$TEMPLATES_DIR/application-prod.yml";
     fi
     if [ ! -f "$DEFAULT_CONF" ] ; then
         echo "Can't found example configuration: $DEFAULT_CONF" >&2;

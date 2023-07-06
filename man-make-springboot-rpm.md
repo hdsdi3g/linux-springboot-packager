@@ -10,8 +10,6 @@ make-springboot-rpm *&lt;PROJECT&gt;* *[&lt;TARGET&gt;]*
 # DESCRIPTION
 With the help of Maven, this app will compile the application jar, create man page, create and prepare SystemD service file with adduser scripts, prepare an configuration file sample, in an autonomous RPM file.
 
-Optionnaly, it run liquibase updates as RPM install and call npm to build front scripts.
-
 It don't manage a RPM repository either a signature.
 
 # OPTIONS
@@ -67,8 +65,6 @@ And should strongly define:
  - `project/properties/java.version`
  - `project/packaging`
 
-Optionally, with persistence: it will use *Liquibase* with setupdb-maven-plugin (https://github.com/hdsdi3g/setupdb-maven-plugin) on Maven project.
-
 Optionally with npm, if your project have a `package.json` file on main dir. It will only run `npm install` before start maven package, only if a `package.json` is founded on the main project directory. On builded project side, **npm install** *should* run an **webpack** for a **production ready version front app** (minified, etc), and *should* put finals files on *src/main/resources/static*. Maven and Spring Boot will collects these files during back building. No checks will be done on this project
 
 Optionally, your project should have a **LICENCE(|.txt|.TXT)** file on its root path.
@@ -104,7 +100,7 @@ All used file which can be included and/or adapted in the creation of the packag
 | EXIT_CODE_MISSING_POM                      | 4         |
 | EXIT_CODE_MISSING_POM_ENTRY                | 5         |
 | EXIT_CODE_CANT_FOUND_JAR_FILE_OUTPUT       | 6         |
-| EXIT_CODE_CANT_FOUND_LIQUIBASE_FILE_OUTPUT | 7         |
+| UNUSED                                     | 7         |
 | EXIT_CODE_CANT_FOUND_DEFAULT_CONF          | 8         |
 | EXIT_CODE_CANT_FOUND_LOG_CONF              | 9         |
 | EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT       | 10        |

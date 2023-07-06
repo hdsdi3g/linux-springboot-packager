@@ -97,7 +97,7 @@ All used file which can be included and/or adapted in the creation of the packag
 | EXIT_CODE_MISSING_POM                      | 4         |
 | EXIT_CODE_MISSING_POM_ENTRY                | 5         |
 | EXIT_CODE_CANT_FOUND_JAR_FILE_OUTPUT       | 6         |
-| EXIT_CODE_CANT_FOUND_LIQUIBASE_FILE_OUTPUT | 7         |
+| UNUSED                                     | 7         |
 | EXIT_CODE_CANT_FOUND_DEFAULT_CONF          | 8         |
 | EXIT_CODE_CANT_FOUND_LOG_CONF              | 9         |
 | EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT       | 10        |

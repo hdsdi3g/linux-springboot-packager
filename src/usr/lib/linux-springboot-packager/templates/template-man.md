@@ -28,8 +28,6 @@ You can use systemctl commands to control it:
 
 **sudo tail** -f *@OUTPUT_DIR_LOG@/@SERVICE_NAME@.log* # to display service logs
 
-If the application offer to deploy database schema with Liquibase, you can use the provided script on *@OUTPUT_LIQUIBASESCRIPTCREDS_FILE@*, or manually with *@OUTPUT_LIQUIBASEXML_FILE@*.
-
 # CONFIGURATION
 You should edit the service configuration files before run the service, on *@OUTPUT_APPCONF_FILE@* and *@OUTPUT_LOGCONF_FILE@*.
 
@@ -65,14 +63,6 @@ The package deploy all this files:
 *@OUTPUT_THIRDPARTY_FILE@* You can access to the list of dependencies integrated with the application here
 
 *@OUTPUT_LICENCE_FILE@* You will find here the application license 
-
-In the context of a Liquibase deployment,
-
-*@OUTPUT_LIQUIBASEXML_FILE@* the SQL update file
-
-*@OUTPUT_LIQUIBASECREDS_FILE@* The file that stores the credentials 
-
-*@OUTPUT_LIQUIBASESCRIPTCREDS_FILE@* The script that creates the credentials file
 
 # BUGS
 You can access the application's issue management on **@ISSUE_MANAGEMENT_NAME@** via *@ISSUE_MANAGEMENT_URL@*.

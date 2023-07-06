@@ -71,8 +71,6 @@ prepare_rpm_build_dir;
 
 echo " * Make jar file";
 make_jar;
-echo " * Make liquibase changelog";
-make_liquibase_changelog;
 echo " * Extract default app conf";
 extract_default_app_conf;
 echo " * Extract information files";
@@ -108,9 +106,6 @@ RPM_VERSION="${VERSION//-/.}";
     echo "";
     echo "%description";
     echo "You will need Java version $JAVA_VERSION to run this software, and must be accessible from $JAVA."
-    if [ -f "$FULL_CHANGELOG" ]; then
-        echo "You should have a valid liquibase setup to run setup/upgrade scripts.";
-    fi
     echo "Provided by $ORG_NAME ($ORG_URL), for more information, go to $URL, or contact $AUTHOR_NAME <$AUTHOR_EMAIL>.";
     echo "";
 
@@ -143,10 +138,6 @@ RPM_VERSION="${VERSION//-/.}";
 
     # App files
     echo "%attr(0644,root,root) $OUTPUT_JAR_FILE" | sed_usr_lib;
-    if [ -f "$FULL_CHANGELOG" ]; then
-        echo "%attr(0644,root,root) $OUTPUT_LIQUIBASEXML_FILE" | sed_usr_lib;
-        echo "%attr(0744,root,root) $OUTPUT_LIQUIBASESCRIPTCREDS_FILE" | sed_usr_lib;
-    fi
 
     # Information files
     if [ -f "$BASE_DIR/LICENCE" ] || [ -f "$BASE_DIR/LICENCE.TXT" ] || [ -f "$BASE_DIR/LICENCE.txt" ]; then
@@ -182,9 +173,6 @@ RPM_VERSION="${VERSION//-/.}";
     echo "[ \$1 = 1 ] && systemctl enable $ARTIFACTID";
     echo "mandb -q";
     echo "echo \"Use man $ARTIFACTID to get setup informations.\"";
-    if [ -f "$FULL_CHANGELOG" ]; then
-        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < run-liquibase.inc.sh
-    fi
     echo "exit 0;";
     echo "";
 

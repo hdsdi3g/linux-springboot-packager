@@ -90,3 +90,5 @@ fi
 if [ -d "$PREFIX/tmp" ]; then
     rm -rf "$PREFIX/tmp";
 fi
+
+echo "Tests are ok";

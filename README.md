@@ -38,7 +38,6 @@ The setup script check the presence of `bash`, `man`, `useradd`, and `systemctl`
  - The application `jar` file
  - A `Systemd` service file, deployed, ready to run
  - THIRD-PARTY and LICENCE files if available.
- - The Liquibase upgrade file and deploy script, if needed.
  - An user/group and home dir for this user, as service name, to run the created service.
  - A log directory ready to get log files
 
@@ -80,7 +79,7 @@ Setup script are crafted to be simply "over installed": the next setup will unin
 
 By default, the service run will need a valid `application.yml` and `log4j2.xml`. Samples/examples are provided.
 
-Actually, Liquibase is not managed, and Windows builds don't support logback/log4j automatic switch as Linux does. `log4j.xml` still is here the only option now.
+Actually, Windows builds don't support logback/log4j automatic switch as Linux does. `log4j.xml` still is here the only option now.
 
 ### Install the EXE files
 
