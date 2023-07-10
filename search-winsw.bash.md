@@ -40,6 +40,7 @@ As environment variable:
 | Error name                                 | Exit code |
 | ------------------------------------------ | --------- |
 | EXIT_CODE_MISSING_DEPENDENCY_COMMAND       | 1         |
+| EXIT_CODE_CANT_FOUND_SCRIPT_FILES          | 7         |
 
 # BUGS
 Free feel to send issues to https://github.com/hdsdi3g/linux-springboot-packager/issues.

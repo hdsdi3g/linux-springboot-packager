@@ -31,7 +31,6 @@ if [ -d "$TEST_TEMP_DIR" ]; then
 fi
 mkdir -p "$TEST_TEMP_DIR";
 
-export PREFIX;
 "$PREFIX/usr/bin/make-springboot-rpm" "$TESTROOT/demospringboot" "$TEST_TEMP_DIR"
 
 EXPECTED_TEST_PACKAGE="$TEST_TEMP_DIR/demospringboot-0.0.1-SNAPSHOT.rpm";

@@ -32,6 +32,17 @@ set -eu
 PREFIX="${PREFIX:-"/"}";
 INCLUDE_DIR="$PREFIX/usr/lib/linux-springboot-packager/include";
 
+# SEARCH SCRIPT FILES
+if [ ! -d "$INCLUDE_DIR" ]; then
+    # /xxx/src/usr/bin/make-springboot-rpm > /xxx/src
+    PREFIX="$(realpath "$0" | xargs dirname | xargs dirname | xargs dirname)";
+    INCLUDE_DIR="$PREFIX/usr/lib/linux-springboot-packager/include";
+    if [ ! -d "$INCLUDE_DIR" ]; then
+        echo "Can't found script files. Please setup PREFIX env var." >&2;
+        exit 7;
+    fi
+fi
+
 # LOAD BUILD DEPS
 . "$INCLUDE_DIR/consts.bash"
 . "$INCLUDE_DIR/checktools.bash"

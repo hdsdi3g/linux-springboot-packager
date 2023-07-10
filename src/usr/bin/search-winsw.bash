@@ -25,7 +25,17 @@
 set -eu
 
 PREFIX="${PREFIX:-"/"}";
-. "$PREFIX/usr/lib/linux-springboot-packager/include/consts.bash"
+CONST_FILE="$PREFIX/usr/lib/linux-springboot-packager/include/consts.bash";
+
+# SEARCH SCRIPT FILES
+if [ ! -f "$CONST_FILE" ]; then
+    PREFIX="$(realpath "$0" | xargs dirname | xargs dirname | xargs dirname)";
+    CONST_FILE="$PREFIX/usr/lib/linux-springboot-packager/include/consts.bash";
+    if [ ! -f "$CONST_FILE" ]; then
+        echo "Please setup PREFIX env var." >&2;
+        exit 7;
+    fi
+fi
 
 declare -a POSSIBLE_PATHS=( "$HOME/.config/linux-springboot-packager" "$HOME/.bin" "$HOME/.local/bin" "$PREFIX/usr/bin" "$PREFIX/usr/lib/linux-springboot-packager/include" "$PREFIX/usr/lib/linux-springboot-packager/templates" )
 declare -a POSSIBLE_NAMES=("WinSW.NET461.exe" "WinSW.NET4.exe" "WinSW.NET2.exe" "WinSW-x64.exe" "WinSW-x86.exe" )
