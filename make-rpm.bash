@@ -34,18 +34,6 @@ export VERSION;
 RELEASE=$(LANG="en_US.UTF-8" date '+%Y%m%d%H%M%S');
 export RELEASE;
 
-# PREPARE MAN
-
-MAN_DIR="$SOURCE_DIR/usr/local/share/man/man1";
-if [ -d "$MAN_DIR" ]; then
-    rm -rf "$MAN_DIR";
-fi
-mkdir -p "$MAN_DIR"
-
-pandoc -s -t man -o "$MAN_DIR/make-springboot-rpm.1" "$ROOT/man-make-springboot-rpm.md"
-pandoc -s -t man -o "$MAN_DIR/make-springboot-exe.1" "$ROOT/man-make-springboot-exe.md"
-pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
-
 # CREATE RPM
 
 BUILDROOT="$ROOT/rpmbuild/BUILDROOT";
@@ -58,6 +46,14 @@ RPMS="$ROOT/rpmbuild/RPMS";
 if [ -d "$RPMS" ]; then
     rm -rf "$RPMS";
 fi
+
+# PREPARE MAN
+
+MAN_DIR="$BUILDROOT/usr/local/share/man/man1";
+mkdir -p "$MAN_DIR"
+pandoc -s -t man -o "$MAN_DIR/make-springboot-rpm.1" "$ROOT/man-make-springboot-rpm.md"
+pandoc -s -t man -o "$MAN_DIR/make-springboot-exe.1" "$ROOT/man-make-springboot-exe.md"
+pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
 
 SPEC_FILE="rpmbuild/SPECS/rpm-centos.spec";
 rpmlint "$SPEC_FILE"

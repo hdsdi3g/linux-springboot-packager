@@ -1,0 +1,35 @@
+name: Install app DEB on Ubuntu
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps
+        run: sudo apt-get install -y --no-install-recommends build-essential binutils lintian debhelper dh-make devscripts pandoc rpm rpmlint
+      - name: Prepare app DEB
+        run: ./make-deb.bash 
+      - name: Install app
+        run: sudo dpkg -i linux-springboot-packager-*.deb
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Install deps for internal test
+        run: sudo apt-get install -y --no-install-recommends man xmlstarlet git wget tar nsis
+      - name: Prepare temp dir for internal tests
+        run: mkdir -p test/temp
+      - name: Run internal RPM test
+        run: make-springboot-rpm test/demospringboot test/temp
+      - name: Prepare fake WinSW
+        run: sudo sh -c 'echo "Empty" > /usr/lib/linux-springboot-packager/templates/WinSW-x64.exe'
+      - name: Run internal EXE test
+        run: make-springboot-exe test/demospringboot test/temp

@@ -1,0 +1,3 @@
+https://www.baeldung.com/linux/create-debian-package
+https://www.iodigital.com/nl/history/intracto/creating-debianubuntu-deb-packages
+https://www.makeuseof.com/create-deb-packages-debian-ubuntu/

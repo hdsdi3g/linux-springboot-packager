@@ -4,6 +4,7 @@ rpmbuild/BUILDROOT
 make-springboot-rpm.1
 make-springboot-exe.1
 search-winsw.bash.1
+pkgdeb
 
 # Maven
 target/
