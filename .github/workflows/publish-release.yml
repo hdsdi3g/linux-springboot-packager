@@ -13,13 +13,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Prepare setup
-        run: sudo apt-get install -y jq man pandoc xmlstarlet rpm rpmlint tar
-      - name: Make file
+        run: |
+          sudo apt-get install -y --no-install-recommends jq man pandoc xmlstarlet \
+          rpm rpmlint tar build-essential binutils lintian debhelper dh-make devscripts
+      - name: Make RPM file
         run: ./make-rpm.bash
+      - name: Make DEB file
+        run: ./make-deb.bash
       - name: Extract version tag
         run: echo "VERSION=$(git describe --tags)" >> $GITHUB_ENV
       - name: Extract RPM file name
         run: echo "RPM_FILE=$(find "rpmbuild/RPMS" -type f -name "*.rpm")" >> $GITHUB_ENV
+      - name: Extract DEB file name
+        run: echo "DEB_FILE=$(find . -maxdepth 1 -type f -name "*.deb")" >> $GITHUB_ENV
       - name: Create release
         run: |
           curl --request POST -H 'Accept: application/vnd.github+json' -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H 'X-GitHub-Api-Version: 2022-11-28' --fail \
@@ -34,3 +40,10 @@ jobs:
           -H "Content-Type: text/plain" \
           --data-binary "@${{ env.RPM_FILE }}" \
           ${{ env.UPLOAD_URL }}?name=linux-springboot-packager-${{ env.VERSION }}.rpm
+      - name: Push created DEB file to release
+        run: |
+          curl --request POST -H "Accept: application/vnd.github+json" -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "X-GitHub-Api-Version: 2022-11-28" --fail \
+          -H "Content-Type: text/plain" \
+          --data-binary "@${{ env.DEB_FILE }}" \
+          ${{ env.UPLOAD_URL }}?name=linux-springboot-packager-${{ env.VERSION }}.deb
+  
