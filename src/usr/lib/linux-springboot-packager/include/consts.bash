@@ -27,8 +27,11 @@ MAVEN_OPTS=(--batch-mode -Dagent=false -Dorg.slf4j.simpleLogger.defaultLogLevel=
 NPM="npm";
 NPM_OPTS=(install);
 ARCH="noarch";
-RELEASE=$(LANG="en_US.UTF-8" date '+%Y%m%d%H%M%S');
+RPM_RELEASE=$(LANG="en_US.UTF-8" date '+%Y%m%d%H%M%S');
+DEB_RELEASE=$(date +%s);
 NOW=$(LANG="en_US.UTF-8" date);
+DEB_CHANGELOG_DATE=$(LANG="en_US.UTF-8" date '+%a, %d %b %Y %H:%M:%S %z');
+YEAR="$(date '+%Y')";
 SHORT_DATE=$(LANG="en_US.UTF-8" date +"%m/%d/%Y");
 JAVA="/usr/bin/java";
 NOT_FOUND="NOT_FOUND";

@@ -73,6 +73,7 @@ mkdir -p "$DOC_DIR"
 MAN_DIR="$PKGDEB_DIR/usr/share/man/man1";
 mkdir -p "$MAN_DIR"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-rpm.1" "$ROOT/man-make-springboot-rpm.md"
+pandoc -s -t man -o "$MAN_DIR/make-springboot-deb.1" "$ROOT/man-make-springboot-deb.md"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-exe.1" "$ROOT/man-make-springboot-exe.md"
 pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
 
@@ -95,6 +96,7 @@ find "$PKGDEB_DIR/usr/share" -type f -exec chmod 644 {} +
 chmod 0755 src/usr/lib/linux-springboot-packager/include/*.bash
 chmod 0755 src/usr/lib/linux-springboot-packager/templates/*.sh
 chmod 0644 src/usr/lib/linux-springboot-packager/templates/*.yml
+chmod 0644 src/usr/lib/linux-springboot-packager/templates/debian*
 chmod 0644 src/usr/lib/linux-springboot-packager/templates/systemd.service
 
 # CREATE DEB

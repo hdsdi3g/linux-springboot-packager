@@ -1,0 +1,193 @@
+#!/bin/bash
+#    make-springboot-deb - create Windows setup program based on Spring Boot applications
+#
+#    Copyright (C) hdsdi3g for hd3g.tv 2023
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or any
+#    later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+#    Usage: make-springboot-deb <SpringBoot project path> [<destination directory to put deb file>]
+#
+#    with export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
+#    with export SKIP_BUILD=1 for skip maven build if the expected jar exists.
+#    with export SKIP_NPM=1 for skip npm builds.
+#    with export SKIP_CLEAN=1 for skip clean temp files/directories after build.
+#    with export SKIP_MAKE=1 for skip to make RPM file, just let ready to build.
+#    with export PREFIX=/somewhere to chroot the app files search
+#
+#    shellcheck disable=SC1091
+
+set -eu
+
+PREFIX="${PREFIX:-"/"}";
+INCLUDE_DIR="$PREFIX/usr/lib/linux-springboot-packager/include";
+
+# SEARCH SCRIPT FILES
+if [ ! -d "$INCLUDE_DIR" ]; then
+    # /xxx/src/usr/bin/make-springboot-rpm > /xxx/src
+    PREFIX="$(realpath "$0" | xargs dirname | xargs dirname | xargs dirname)";
+    INCLUDE_DIR="$PREFIX/usr/lib/linux-springboot-packager/include";
+    if [ ! -d "$INCLUDE_DIR" ]; then
+        echo "Can't found script files. Please setup PREFIX env var." >&2;
+        exit 7;
+    fi
+fi
+
+# LOAD BUILD DEPS
+. "$INCLUDE_DIR/consts.bash"
+. "$INCLUDE_DIR/checktools.bash"
+. "$INCLUDE_DIR/project.bash"
+
+# CHECK PARAM PRESENCE
+if [ "$#" -eq 0 ]; then
+    echo "Usage $0 <SpringBoot project path>" >&2;
+    echo "The SpringBoot project path must be a Maven project (with pom.xml on root)" >&2;
+    exit "$EXIT_CODE_MISSING_PROJECT";
+fi
+
+# CHECK TOOL PRESENCE
+check_mktemp;
+check_maven;
+check_realpath;
+check_basename;
+check_pandoc;
+check_xmlstarlet;
+check_dpkgdeb;
+check_lintian;
+
+echo " * Check destination dir";
+check_destination_dir "$@";
+echo " * Load project";
+project_load_base_dir "$1";
+echo " * Make front (if needed)";
+make_front;
+echo " * Load maven vars";
+load_mvn_vars;
+echo " * Def Linux (deb) base dir vars";
+def_linux_base_dir_vars;
+def_linux_deb_base_dir_vars;
+echo " * Def file/dir vars";
+def_files_dir_vars;
+
+echo " * Prepare DEB build dir";
+prepare_deb_build_dir;
+
+echo " * Make jar file";
+make_jar;
+echo " * Extract default app conf";
+extract_default_app_conf;
+echo " * Extract information files";
+extract_information_files;
+echo " * Apply templates";
+make_replace_list_vars;
+echo " * Extract linux log conf";
+extract_default_linux_log_conf;
+
+make_man_page;
+gzip -9n "$BUILD_DIR/$OUTPUT_MAN_FILE";
+chmod 644 "$BUILD_DIR/$OUTPUT_MAN_FILE.gz"
+
+echo " * Make service conf";
+make_service_conf;
+
+echo " * Make Debian package files";
+OUTPUT_CONTROL_FILE="$DEBIAN_DIR/control";
+OUTPUT_CHANGELOG_FILE="$DEB_WORKING_DIR/$OUTPUT_DIR_DOC/changelog";
+OUTPUT_COPYRIGHT_FILE="$DEB_WORKING_DIR/$OUTPUT_DIR_DOC/copyright";
+
+sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-control" > "$OUTPUT_CONTROL_FILE";
+sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-changelog" > "$OUTPUT_CHANGELOG_FILE";
+sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-copyright" > "$OUTPUT_COPYRIGHT_FILE";
+
+gzip -9n "$OUTPUT_CHANGELOG_FILE"
+chmod 644 "$OUTPUT_CHANGELOG_FILE.gz"
+chmod 644 "$OUTPUT_COPYRIGHT_FILE"
+
+find "$DEB_WORKING_DIR/etc" -type f \
+    | sed -e "s~$DEB_WORKING_DIR/~/~g;" > "$DEBIAN_DIR/conffiles";
+
+OUTPUT_PREINST_FILE="$DEBIAN_DIR/preinst";
+OUTPUT_POSTINST_FILE="$DEBIAN_DIR/postinst";
+OUTPUT_PRERM_FILE="$DEBIAN_DIR/prerm";
+OUTPUT_POSTRM_FILE="$DEBIAN_DIR/postrm";
+
+{
+    echo '#!/bin/sh'; 
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh";
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/create-user.inc.sh";
+} > "$OUTPUT_PREINST_FILE";
+
+{
+    echo '#!/bin/sh';
+    echo "echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
+    echo "ln -sf $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK";
+    echo "systemctl daemon-reload";
+    echo "systemctl enable $ARTIFACTID";
+    echo "mandb -q";
+    echo "chown $ARTIFACTID:$ARTIFACTID \"$OUTPUT_DIR_LOG\"";
+    echo "chmod 0700 \"$OUTPUT_DIR_LOG\"";
+    echo "echo \"Use man $ARTIFACTID to get setup informations.\"";
+} > "$OUTPUT_POSTINST_FILE";
+
+{
+    echo '#!/bin/sh';
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh";
+    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh";
+} > "$OUTPUT_PRERM_FILE";
+
+{
+    echo '#!/bin/sh';
+    echo "mandb -q";
+    echo "systemctl daemon-reload";
+} > "$OUTPUT_POSTRM_FILE";
+
+chmod +x "$OUTPUT_PREINST_FILE";
+chmod +x "$OUTPUT_POSTINST_FILE";
+chmod +x "$OUTPUT_PRERM_FILE";
+chmod +x "$OUTPUT_POSTRM_FILE";
+
+find "$DEB_WORKING_DIR" -type d -exec chmod 755 {} +
+find "$DEB_WORKING_DIR/etc" -type f -exec chmod 644 {} +
+find "$DEB_WORKING_DIR/etc" -type f -name application.yml -exec chmod 600 {} +
+find "$DEB_WORKING_DIR/usr" -type f -exec chmod 644 {} +
+
+if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
+    dpkg-deb --root-owner-group --build "$DEB_WORKING_DIR"
+    DEB_FILE="$DEB_WORKING_DIR.deb";
+
+    if [ ! -f "$DEB_FILE" ]; then
+        echo "Can't found deb file, expect: $DEB_FILE" >&2;
+        exit "$EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT";
+    fi
+
+    FINAL_DEB_FILE="$BUILD_DESTINATION_DIR/$ARTIFACTID-$VERSION.deb"
+    mv "$DEB_FILE" "$FINAL_DEB_FILE";
+
+    clean_after_build "$DEB_WORKING_DIR";
+
+    lintian --fail-on warning \
+        --no-tag-display-limit \
+        --suppress-tags debian-changelog-file-missing-or-wrong-name,non-standard-file-perm,unknown-java-class-version,maintainer-script-calls-systemctl,systemd-service-in-odd-location,maintainer-script-ignores-errors \
+        "$FINAL_DEB_FILE"
+
+    echo "";
+    echo "About this packet:"
+    dpkg --info "$FINAL_DEB_FILE"
+    echo "";
+    echo "Now, you can use $FINAL_DEB_FILE, with sudo dpkg -i $FINAL_DEB_FILE"
+
+else
+    echo "You will found the control file to $OUTPUT_CONTROL_FILE";
+    echo "Free feel to edit it, and build with:";
+    echo "  dpkg-deb --root-owner-group --build $DEB_WORKING_DIR";
+fi

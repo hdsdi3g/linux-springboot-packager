@@ -52,6 +52,7 @@ fi
 MAN_DIR="$BUILDROOT/usr/local/share/man/man1";
 mkdir -p "$MAN_DIR"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-rpm.1" "$ROOT/man-make-springboot-rpm.md"
+pandoc -s -t man -o "$MAN_DIR/make-springboot-deb.1" "$ROOT/man-make-springboot-deb.md"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-exe.1" "$ROOT/man-make-springboot-exe.md"
 pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
 

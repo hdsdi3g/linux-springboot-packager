@@ -2,7 +2,7 @@
 Description=@NAME@: @SHORT_DESCRIPTION@
 Documentation=man @SERVICE_NAME@
 Wants=network-online.target
-After=network-online.target syslog.target
+After=network-online.target
 [Service]
 EnvironmentFile=@OUTPUT_ENV_FILE@
 WorkingDirectory=@OUTPUT_DIR_USER@

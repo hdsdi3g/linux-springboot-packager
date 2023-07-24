@@ -116,7 +116,7 @@ But never forget there are an infinite number of possible ways to create this ty
 This application was writted by **hdsdi3g**; see on GitHub https://github.com/hdsdi3g/linux-springboot-packager.
 
 # SEE ALSO
-**make-springboot-exe(1)** and **search-winsw.bash(1)**.
+**make-springboot-deb(1)**, **make-springboot-exe(1)** and **search-winsw.bash(1)**.
 
 # NOTES
 This document was transformed by *pandoc* from the original markdown documentation file.

@@ -27,6 +27,8 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends man xmlstarlet git wget tar nsis
       - name: Prepare temp dir for internal tests
         run: mkdir -p test/temp
+      - name: Run internal DEB test
+        run: make-springboot-deb test/demospringboot test/temp
       - name: Run internal RPM test
         run: make-springboot-rpm test/demospringboot test/temp
       - name: Prepare fake WinSW

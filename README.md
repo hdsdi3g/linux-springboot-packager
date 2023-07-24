@@ -2,9 +2,8 @@
 
 This script collection will create:
  - a [RPM package](man-make-springboot-rpm.md)
+ - a [DEB package](man-make-springboot-deb.md)
  - a [Windows self installer](man-make-springboot-exe.md) (via [NSIS](https://sourceforge.net/projects/nsis/) and [WinSW](https://github.com/winsw/winsw))
- - a [RPM file to install this scripts collection](#how-to-make-a-rpm-installer-for-this-app)
- - a [DEB file to install this scripts collection](#how-to-make-a-deb-installer-for-this-app)
 
 For a **Spring Boot** project, runned as service, and build npm/front during packaging.
 
@@ -12,23 +11,36 @@ Via _bash_, on Linux (RHEL/Debian) and Windows/WSL, not tested on macOS.
 
 **See the md/man files on the project root for more informations.**
 
+Free feel to add corrections and/or new features (it's really not rocket science).
+
+And you can found two others scripts (see below):
+
+ - a RPM package to install this scripts collection
+ - a DEB package to install this scripts collection
+
 [![Tests on Ubuntu](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/tests-ubuntu.yml/badge.svg)](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/tests-ubuntu.yml)
 
-## make-springboot-rpm
+[![Shellcheck analysing](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/shellcheck.yml)
 
-For build RPMs files, you will need, in addition to `maven` and `java`:
+[![Install app DEB on Ubuntu](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/install-ubuntu.yml/badge.svg)](https://github.com/hdsdi3g/linux-springboot-packager/actions/workflows/install-ubuntu.yml)
+
+## make-springboot-deb and make-springboot-rpm
+
+For build RPMs and/or DEB files, you will need, in addition to `maven` and `java`:
  - `realpath`
  - `basename`
- - `rpmbuild`
- - `rpmlint`
  - `pandoc`
  - `xmlstarlet`
  - `mktemp`
+ - `dpkg-deb` (DEB)
+ - `lintian` (DEB)
+ - `rpmbuild` (RPM)
+ - `rpmlint` (RPM)
  - and optionnaly `npm`
 
-### Install the RPM files
+### Install the DEB/RPM files
 
-The builded RPM will run some install/uninstall scripts and do a few things, apart from that, it's a classic, non-signed RPM file.
+The builded DEB/RPM will run some install/uninstall scripts and do a few things, apart from that, it's a classic, non-signed DEB and RPM files.
 
 The setup script check the presence of `bash`, `man`, `useradd`, and `systemctl`, and will deploy:
  - A man file ([template here](src/usr/lib/linux-springboot-packager/templates/template-man.md)), as `man artifactId`
@@ -49,6 +61,18 @@ Java presence will _not be_ checked by the installer. The default service file w
 Before deploy files, the service will be stopped (if exists and if running). After deploy files, it will be enabled, at boot, but not started.
 
 Run the setup with:
+
+#### DEB
+
+```bash
+# Install / upgrade
+sudo dpkg -i <artifactid-version.deb>
+
+# Remove
+sudo dpkg -r <artifactid>
+```
+
+#### RPM
 
 ```bash
 # Install / upgrade
@@ -92,31 +116,20 @@ Free feel to edit `servicewinsw.xml` before build the setup, or edit the product
 
 Don't forget to setup a compatible JVM, and put java.exe directory in PATH.
 
-## How to make a RPM installer for this app
-
-Do a
-
-```bash
-./make-rpm.bash
-```
-
-You will need `git`, `realpath`, `man`, `pandoc`, `rpmlint`, `rpmbuild`, `rpm` to run it.
-
-It's fonctionnal on _Debian-like_ hosts (to build it, not run it).
-
-Don't forget to install/setup `java`, `maven`, `pandoc`...
-
-## How to make a DEB installer for this app
+## How to make a DEB/RPM installer for this app
 
 Do a
 
 ```bash
 ./make-deb.bash
+./make-rpm.bash
 ```
 
-You will need `git`, `realpath`, `man`, `pandoc`, `dpkg-deb`, `lintian` to run it.
+You will need `git`, `realpath`, `man`, `pandoc`, `rpmlint`, `rpmbuild`, `rpm`, `dpkg-deb` and `lintian` to run it.
 
-Don't forget to install/setup after `java`, `maven`, `pandoc`...
+It's fonctionnal for RPM on _Debian-like_ hosts (to build it, not run it), and vice-versa on DEB on _RHEL-like_ hosts.
+
+Don't forget to install/setup `java`, `maven`, `pandoc`...
 
 ## Run internal self tests
 
@@ -126,12 +139,6 @@ Do a
 ./run-tests.bash
 ```
 
-It will create a test RPM file for a demo java project on `test/demospringboot`, and optionnaly a EXE file.
+It will create a test DEB and RPM files for a demo java project on `test/demospringboot`, and optionnaly a EXE file.
 
-You will need all the mandatory RPM deps, optionnaly EXE deps.
-
-## Roadmap dev
-
-Free feel to add corrections and/or new features (it's really not rocket science).
-
-On day, **DEB** files will be added, like RPM here.
+You will need all the mandatory DEB and RPM deps, optionnaly EXE deps.

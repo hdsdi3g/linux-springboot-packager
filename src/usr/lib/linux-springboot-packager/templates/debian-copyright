@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: @NAME@
+Source: @URL@
+
+Files: *
+Copyright: @YEAR@ @ORG_NAME@
+License: SPECIFIC
+ @LICENCE@
+ See dependencies licences references for this project
+ on @URL@.

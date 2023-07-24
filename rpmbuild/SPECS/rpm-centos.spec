@@ -38,6 +38,7 @@ Provided by hd3g.tv (https://hd3g.tv), for more information, go to https://githu
 %defattr(644,root,root)
 %attr(0755,root,root) %{_bindir}/make-springboot-exe
 %attr(0755,root,root) %{_bindir}/make-springboot-rpm
+%attr(0755,root,root) %{_bindir}/make-springboot-deb
 %attr(0755,root,root) %{_bindir}/search-winsw.bash
 %attr(0644, root,root) %{_libdir}/linux-springboot-packager/*
 %doc %attr(0644, root,root) /usr/local/share/man/man1/*

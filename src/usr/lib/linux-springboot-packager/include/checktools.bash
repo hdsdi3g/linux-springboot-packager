@@ -90,3 +90,17 @@ function check_makensis() {
 	    exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
     fi
 }
+
+function check_dpkgdeb() {
+    if ! [ -x "$(command -v dpkg-deb)" ]; then
+        echo "Error: dpkg-deb is not installed." >&2
+	    exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
+    fi
+}
+
+function check_lintian() {
+    if ! [ -x "$(command -v lintian)" ]; then
+        echo "Error: lintian is not installed." >&2
+	    exit "$EXIT_CODE_MISSING_DEPENDENCY_COMMAND";
+    fi
+}

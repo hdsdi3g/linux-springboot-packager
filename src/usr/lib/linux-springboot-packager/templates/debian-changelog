@@ -1,0 +1,6 @@
+@APP_NAME@ (@VERSION@) stable; urgency=low
+  * This package doesn't provide changelog document.
+  Please refer to project page
+  on @URL@
+
+ -- @AUTHOR_NAME@ <@AUTHOR_EMAIL@>  @DEB_CHANGELOG_DATE@

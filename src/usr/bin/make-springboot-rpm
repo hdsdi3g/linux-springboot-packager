@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-#    Usage: make-springboot-rpm <SpringBoot project path> [<destination directory to put exe file>]
+#    Usage: make-springboot-rpm <SpringBoot project path> [<destination directory to put rpm file>]
 #
 #    with export SKIP_IMPORT_POM=1 for skip to compute full pom XML file if a temp version exists
 #    with export SKIP_BUILD=1 for skip maven build if the expected jar exists.
@@ -107,7 +107,7 @@ RPM_VERSION="${VERSION//-/.}";
     echo "License:             $LICENCE";
     echo "Name:                $ARTIFACTID";
     echo "Version:             $RPM_VERSION";
-    echo "Release:             $RELEASE";
+    echo "Release:             $RPM_RELEASE";
     echo "BuildArch:           $ARCH";
     echo "Group:               System Environment/Daemons";
     echo "Vendor:              $ORG_NAME"
@@ -179,7 +179,7 @@ RPM_VERSION="${VERSION//-/.}";
     # install $1 == 1
     # upgrade (new) $1 == 2
     echo "[ \$1 = 1 ] && echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
-    echo "[ \$1 = 1 ] && ln -s $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK" | sed_usr_lib;
+    echo "[ \$1 = 1 ] && ln -sf $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK" | sed_usr_lib;
     echo "[ \$1 = 1 ] && systemctl daemon-reload";
     echo "[ \$1 = 1 ] && systemctl enable $ARTIFACTID";
     echo "mandb -q";
@@ -191,10 +191,15 @@ RPM_VERSION="${VERSION//-/.}";
     ### PRE UNINSTALL
     ##########################################################################################
     echo "%preun -p /usr/bin/bash";
-    # upgrade (old) $1 == 1
-    # remove $1 == 0
+    # With RPM parameters $1:
+    # 0 remove
+    # 1 install
+    # 1 upgrade old uninstall
+    # 2 upgrade new install
     sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
+    #echo "if [ \"\$1\" -eq \"0\" ]; then";
     sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh"
+    #echo "fi";
     echo "exit 0;";
     echo "";
 
@@ -207,6 +212,7 @@ RPM_VERSION="${VERSION//-/.}";
     echo "mandb -q";
     echo "[ \$1 -eq 0 ] && echo \"To clean-up this setup, you should remove $OUTPUT_DIR_CONF, $OUTPUT_DIR_USER, $OUTPUT_DIR_LOG\"." | sed_usr_lib;
     echo "[ \$1 -eq 0 ] && echo \"And you can delete user and group $ARTIFACTID\".";
+    echo "systemctl daemon-reload";
     echo "exit 0;";
     echo "";
 } > "$SPEC_FILE"
@@ -216,7 +222,7 @@ if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
     # BUILD BIN ONLY
     rpmbuild --define "_libdir /usr/lib" -bb "$SPEC_FILE"
 
-    RPM_FILE="$RPM_WORKING_DIR/RPMS/$ARCH/$ARTIFACTID-$RPM_VERSION-$RELEASE.$ARCH.rpm";
+    RPM_FILE="$RPM_WORKING_DIR/RPMS/$ARCH/$ARTIFACTID-$RPM_VERSION-$RPM_RELEASE.$ARCH.rpm";
     if [ ! -f "$RPM_FILE" ]; then
         echo "Can't found rpm file, expect: $RPM_FILE" >&2;
         exit "$EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT";

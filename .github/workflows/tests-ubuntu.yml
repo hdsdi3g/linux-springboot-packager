@@ -18,6 +18,6 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - name: Install deps
-        run: sudo apt-get install -y --no-install-recommends man pandoc xmlstarlet git wget rpm rpmlint tar nsis
+        run: sudo apt-get install -y --no-install-recommends man pandoc lintian xmlstarlet git wget rpm rpmlint tar nsis
       - name: Run tests
         run: ./run-tests.bash

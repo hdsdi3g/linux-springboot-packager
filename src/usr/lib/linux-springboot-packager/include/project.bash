@@ -106,6 +106,12 @@ function def_linux_base_dir_vars() {
     OUTPUT_DIR_USER="/var/lib/$ARTIFACTID";
 }
 
+function def_linux_deb_base_dir_vars() {
+    OUTPUT_DIR_MAN="/usr/share/man/man8";
+    OUTPUT_DIR_APP="/usr/share/$ARTIFACTID";
+    OUTPUT_DIR_DOC="/usr/share/doc/$ARTIFACTID";
+}
+
 function def_windows_base_dir_vars() {
     OUTPUT_DIR_CONF="C:\\ProgramData\\$ARTIFACTID";
     OUTPUT_DIR_DEFAUT="";
@@ -155,6 +161,7 @@ function make_replace_list_vars() {
         "s~@SHORT_DESCRIPTION@~$SHORT_DESCRIPTION~g;"
         "s~@APP_NAME@~$ARTIFACTID~g;"
         "s~@VERSION@~$VERSION~g;"
+        "s~@DEB_RELEASE@~$DEB_RELEASE~g;"
         "s~@JAVA@~$JAVA~g;"
         "s~@SERVICE_NAME@~$ARTIFACTID~g;"
         "s~@SERVICE_USER_NAME@~$ARTIFACTID~g;"
@@ -163,7 +170,9 @@ function make_replace_list_vars() {
         "s~@ISSUE_MANAGEMENT_NAME@~$ISSUE_MANAGEMENT_NAME~g;"
         "s~@ISSUE_MANAGEMENT_URL@~$ISSUE_MANAGEMENT_URL~g;"
         "s~@NOW@~$NOW~g;"
+        "s~@YEAR@~$YEAR~g;"
         "s~@SHORT_DATE@~$SHORT_DATE~g;"
+        "s~@DEB_CHANGELOG_DATE@~$DEB_CHANGELOG_DATE~g;"
         "s~@ORG_NAME@~$ORG_NAME~g;"
         "s~@ORG_URL@~$ORG_URL~g;"
         "s~@URL@~$URL~g;"
@@ -212,6 +221,22 @@ function prepare_rpm_build_dir() {
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_MAN";
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_APP";
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_LOG";
+}
+
+function prepare_deb_build_dir() {
+    DEB_WORKING_DIR=$(mktemp -u -d -t "lsbp_DEB_""$ARTIFACTID""_XXXXXX");
+    echo "Working dir: $DEB_WORKING_DIR";
+    DEBIAN_DIR="$DEB_WORKING_DIR/DEBIAN";
+    mkdir -p "$DEBIAN_DIR"
+    BUILD_DIR="$DEB_WORKING_DIR";
+    
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_CONF";
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DEFAUT";
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_SYSTEMD";
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_MAN";
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_APP";
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_LOG";
+    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DOC";
 }
 
 function prepare_exe_build_dir() {
@@ -274,7 +299,6 @@ function extract_default_app_conf() {
 
     cp "$DEFAULT_CONF" "$BUILD_DIR/$OUTPUT_APPCONF_FILE";
 }
-
 
 function extract_default_linux_log_conf() {
     if [ "$LOGBACK_VERSION" != "$NOT_FOUND" ]; then

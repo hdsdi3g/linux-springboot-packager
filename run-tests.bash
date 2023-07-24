@@ -22,7 +22,12 @@ set -eu
 
 cd "$(dirname "$0")"
 
+###################
+# SETUP TESTS ZONE
+###################
+
 PREFIX="src";
+export PREFIX="$PREFIX";
 TESTROOT="test";
 
 TEST_TEMP_DIR="$TESTROOT/temp";
@@ -30,6 +35,21 @@ if [ -d "$TEST_TEMP_DIR" ]; then
     rm -rf "$TEST_TEMP_DIR";
 fi
 mkdir -p "$TEST_TEMP_DIR";
+
+################
+# DEB TEST ZONE
+################
+"$PREFIX/usr/bin/make-springboot-deb" "$TESTROOT/demospringboot" "$TEST_TEMP_DIR"
+
+EXPECTED_TEST_PACKAGE="$TEST_TEMP_DIR/demospringboot-0.0.1-SNAPSHOT.deb";
+if [ ! -f "$EXPECTED_TEST_PACKAGE" ]; then
+    echo "Error: can't found builded package: $EXPECTED_TEST_PACKAGE" >&2;
+    exit 1;
+fi
+
+################
+# RPM TEST ZONE
+################
 
 "$PREFIX/usr/bin/make-springboot-rpm" "$TESTROOT/demospringboot" "$TEST_TEMP_DIR"
 
@@ -81,10 +101,18 @@ assert_contain "/etc/systemd/system/demospringboot.service";
 assert_contain "/usr/local/share/man/man8/demospringboot.8";
 assert_contain "/var/log/demospringboot";
 
+################
+# EXE TEST ZONE
+################
+
 if  [ -x "$(command -v makensis)" ]; then
     echo "Empty" > "$PREFIX/usr/lib/linux-springboot-packager/templates/WinSW-x64.exe"
     "$PREFIX/usr/bin/make-springboot-exe" "$TESTROOT/demospringboot" "$TEST_TEMP_DIR"
 fi
+
+################
+# CLEAN ZONE
+################
 
 if [ -d "$PREFIX/tmp" ]; then
     rm -rf "$PREFIX/tmp";
