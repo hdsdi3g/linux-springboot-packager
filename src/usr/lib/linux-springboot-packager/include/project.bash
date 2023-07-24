@@ -1,3 +1,4 @@
+#!/bin/bash
 #    project.bash - load all setups and builds functions used by make-XXX scripts
 #
 #    Copyright (C) hdsdi3g for hd3g.tv 2022
