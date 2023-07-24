@@ -92,6 +92,11 @@ find "$PKGDEB_DIR/usr/share" -type d -exec chmod 755 {} +
 find "$PKGDEB_DIR/usr/share" -type f -not -name copyright -exec gzip -9n {} +
 find "$PKGDEB_DIR/usr/share" -type f -exec chmod 644 {} +
 
+chmod 0755 src/usr/lib/linux-springboot-packager/include/*.bash
+chmod 0755 src/usr/lib/linux-springboot-packager/templates/*.sh
+chmod 0644 src/usr/lib/linux-springboot-packager/templates/*.yml
+chmod 0644 src/usr/lib/linux-springboot-packager/templates/systemd.service
+
 # CREATE DEB
 dpkg-deb --root-owner-group --build pkgdeb
 PACKAGE_FILE="linux-springboot-packager-$VERSION.deb";
