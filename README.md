@@ -4,6 +4,7 @@ This script collection will create:
  - a [RPM package](man-make-springboot-rpm.md)
  - a [Windows self installer](man-make-springboot-exe.md) (via [NSIS](https://sourceforge.net/projects/nsis/) and [WinSW](https://github.com/winsw/winsw))
  - a [RPM file to install this scripts collection](#how-to-make-a-rpm-installer-for-this-app)
+ - a [DEB file to install this scripts collection](#how-to-make-a-deb-installer-for-this-app)
 
 For a **Spring Boot** project, runned as service, and build npm/front during packaging.
 
@@ -99,11 +100,23 @@ Do a
 ./make-rpm.bash
 ```
 
-You will need `git`, `realpath`, `man`, `pandoc`, `rpmlint`, `rpmbuild`, `rpm`.
+You will need `git`, `realpath`, `man`, `pandoc`, `rpmlint`, `rpmbuild`, `rpm` to run it.
 
 It's fonctionnal on _Debian-like_ hosts (to build it, not run it).
 
 Don't forget to install/setup `java`, `maven`, `pandoc`...
+
+## How to make a DEB installer for this app
+
+Do a
+
+```bash
+./make-deb.bash
+```
+
+You will need `git`, `realpath`, `man`, `pandoc`, `dpkg-deb`, `lintian` to run it.
+
+Don't forget to install/setup after `java`, `maven`, `pandoc`...
 
 ## Run internal self tests
 
@@ -119,6 +132,6 @@ You will need all the mandatory RPM deps, optionnaly EXE deps.
 
 ## Roadmap dev
 
-Like for the [linux-app-packager](https://github.com/hdsdi3g/linux-app-packager) project, free feel to add corrections and/or new features (it's really not rocket science).
+Free feel to add corrections and/or new features (it's really not rocket science).
 
 On day, **DEB** files will be added, like RPM here.
