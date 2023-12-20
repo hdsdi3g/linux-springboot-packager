@@ -6,7 +6,7 @@ After=network-online.target
 [Service]
 EnvironmentFile=@OUTPUT_ENV_FILE@
 WorkingDirectory=@OUTPUT_DIR_USER@
-ExecStart=@JAVA@ -noverify -server \
+ExecStart=@JAVA@ -server \
     -Dfile.encoding=UTF-8 \
     -Xms256m -Xmx1024m \
     -XX:+ExitOnOutOfMemoryError \
