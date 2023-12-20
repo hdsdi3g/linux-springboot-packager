@@ -92,12 +92,13 @@ pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
 find "$PKGDEB_DIR/usr/share" -type d -exec chmod 755 {} +
 find "$PKGDEB_DIR/usr/share" -type f -not -name copyright -exec gzip -9n {} +
 find "$PKGDEB_DIR/usr/share" -type f -exec chmod 644 {} +
+find "$PKGDEB_DIR/usr/bin" -type f -exec chmod 755 {} +
 
-chmod 0755 src/usr/lib/linux-springboot-packager/include/*.bash
-chmod 0755 src/usr/lib/linux-springboot-packager/templates/*.sh
-chmod 0644 src/usr/lib/linux-springboot-packager/templates/*.yml
-chmod 0644 src/usr/lib/linux-springboot-packager/templates/debian*
-chmod 0644 src/usr/lib/linux-springboot-packager/templates/systemd.service
+chmod 0755 "$PKGDEB_DIR"/usr/lib/linux-springboot-packager/include/*.bash
+chmod 0755 "$PKGDEB_DIR"/usr/lib/linux-springboot-packager/templates/*.sh
+chmod 0644 "$PKGDEB_DIR"/usr/lib/linux-springboot-packager/templates/*.yml
+chmod 0644 "$PKGDEB_DIR"/usr/lib/linux-springboot-packager/templates/debian*
+chmod 0644 "$PKGDEB_DIR"/usr/lib/linux-springboot-packager/templates/systemd.service
 
 # CREATE DEB
 dpkg-deb --root-owner-group --build pkgdeb
