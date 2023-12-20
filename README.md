@@ -5,7 +5,7 @@ This script collection will create:
  - a [DEB package](man-make-springboot-deb.md)
  - a [Windows self installer](man-make-springboot-exe.md) (via [NSIS](https://sourceforge.net/projects/nsis/) and [WinSW](https://github.com/winsw/winsw))
 
-For a **Spring Boot** project, runned as service, and build npm/front during packaging.
+For a **Spring Boot** project, runned as service, or as command line interface (CLI / shell), and build npm/front during packaging.
 
 Via _bash_, on Linux (RHEL/Debian) and Windows/WSL, not tested on macOS.
 
@@ -42,23 +42,24 @@ For build RPMs and/or DEB files, you will need, in addition to `maven` and `java
 
 The builded DEB/RPM will run some install/uninstall scripts and do a few things, apart from that, it's a classic, non-signed DEB and RPM files.
 
-The setup script check the presence of `bash`, `man`, `useradd`, and `systemctl`, and will deploy:
+The setup script check the presence of `bash`, `man`, `useradd` (not for CLI), and `systemctl` (idem), and will deploy:
  - A man file ([template here](src/usr/lib/linux-springboot-packager/templates/template-man.md)), as `man artifactId`
- - some example files:
+ - some example files (not for CLI):
    - An configuration file (`application.yml`)
    - An configuration log file (`log4j2.xml` or `logback.xml`)
    - An default file
  - The application `jar` file
- - A `Systemd` service file, deployed, ready to run
+ - A `Systemd` service file, deployed, ready to run (not for CLI)
+ - A command line runner (only for CLI)
  - THIRD-PARTY and LICENCE files if available.
- - An user/group and home dir for this user, as service name, to run the created service.
- - A log directory ready to get log files
+ - An user/group and home dir for this user, as service name, to run the created service (not for CLI).
+ - A log directory ready to get log files (not for CLI)
 
 All templates are in the `src/usr/lib/linux-springboot-packager/templates` directory.
 
 Java presence will _not be_ checked by the installer. The default service file will expect to found it in `/usr/bin/java`. Change it as you what after setup.
 
-Before deploy files, the service will be stopped (if exists and if running). After deploy files, it will be enabled, at boot, but not started.
+Before deploy files, the service will be stopped (if exists and if running). After deploy files, it will be enabled, at boot, but not started (not for CLI).
 
 Run the setup with:
 
@@ -85,13 +86,40 @@ sudo rpm -e <artifactid>
 sudo rpm -e --allmatches <artifactid>
 ```
 
-You can run manually with like:
+You can run manually service with:
 
 ```bash
 runuser -u <SERVICE_NAME> \
   -- java -Dlogging.config=/etc/<SERVICE_NAME>/log4j2.xml|logback.xml \
   -jar /usr/lib/<SERVICE_NAME>/<artifactId>-bin.jar \
   --spring.config.location=/etc/<SERVICE_NAME>/application.yml
+```
+
+And can run CLI with:
+```bash
+<artifactId> [params] [...]
+```
+
+## CLI or Service mode
+
+By default, all service options (systemd, user, logs...) will be setup.
+
+To switch to CLI mode, just add a POM proprerty on project pom (or it's ancestry) as:
+
+```xml
+<properties>
+  <linux-springboot-packager.kind>cli</linux-springboot-packager.kind>
+</properties>
+```
+
+And you **MUST** provide a **MAN** page. Free feel to generate it as you want. The _first_ `.man` file founded on project directory will be used. This call will be done after generate JAR with Maven, so you can link `mvn package` and *man* generation.
+
+On Service building, the man page will be provided (see `template-man.md`).
+
+On all cases, the man page will be displayed with:
+
+```bash
+man <artifactId>
 ```
 
 ## make-springboot-exe
@@ -105,6 +133,8 @@ Setup script are crafted to be simply "over installed": the next setup will unin
 By default, the service run will need a valid `application.yml` and `log4j2.xml`. Samples/examples are provided.
 
 Actually, Windows builds don't support logback/log4j automatic switch as Linux does. `log4j.xml` still is here the only option now.
+
+CLI option is not setup for Windows.
 
 ### Install the EXE files
 
@@ -139,6 +169,6 @@ Do a
 ./run-tests.bash
 ```
 
-It will create a test DEB and RPM files for a demo java project on `test/demospringboot`, and optionnaly a EXE file.
+It will create a test DEB and RPM files for a demo java project on `test/demospringboot` and `test/democlispringboot` for CLI option, and optionnaly a EXE file.
 
 You will need all the mandatory DEB and RPM deps, optionnaly EXE deps.

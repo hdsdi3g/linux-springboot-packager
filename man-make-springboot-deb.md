@@ -2,13 +2,13 @@
 % linux-springboot-packager
 
 # NAME
-make-springboot-deb - make a deb package from a Spring Boot application as a system service
+make-springboot-deb - make a deb package from a Spring Boot application as a system service, or a CLI application.
 
 # SYNOPSIS
 make-springboot-deb *&lt;PROJECT&gt;* *[&lt;TARGET&gt;]*
 
 # DESCRIPTION
-With the help of Maven, this app will compile the application jar, create man page, create and prepare SystemD service file with adduser scripts, prepare an configuration file sample, in an autonomous deb file.
+With the help of Maven, this app will compile the application jar, create man page, create and prepare SystemD service file with adduser scripts (not for CLI), prepare an configuration file sample (not for CLI), deploy a bash runner (only for CLI), in an autonomous DEB file.
 
 It don't manage a deb repository either a signature.
 
@@ -65,6 +65,12 @@ And should strongly define:
  - `project/properties/java.version`
  - `project/packaging`
 
+Switch CLI mode with:
+
+ - `project/properties/linux-springboot-packager.kind` set on `cli`
+
+On CLI mode, you must provide an **man** file in the project directory.
+
 Optionally with npm, if your project have a `package.json` file on main dir. It will only run `npm install` before start maven package, only if a `package.json` is founded on the main project directory. On builded project side, **npm install** *should* run an **webpack** for a **production ready version front app** (minified, etc), and *should* put finals files on *src/main/resources/static*. Maven and Spring Boot will collects these files during back building. No checks will be done on this project
 
 Optionally, your project should have a **LICENCE(|.txt|.TXT)** file on its root path.
@@ -106,6 +112,7 @@ All used file which can be included and/or adapted in the creation of the packag
 | EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT       | 10        |
 | EXIT_CODE_CANT_FOUND_APP_LOGGER            | 11        |
 | EXIT_CODE_CANT_FOUND_DEST_DIR              | 12        |
+| EXIT_CODE_CANT_FOUND_CLI_MAN               | 13        |
 
 # BUGS
 Free feel to send issues to https://github.com/hdsdi3g/linux-springboot-packager/issues.
@@ -122,4 +129,4 @@ This application was writted by **hdsdi3g**; see on GitHub https://github.com/hd
 This document was transformed by *pandoc* from the original markdown documentation file.
 
 # COPYRIGHT
-Copyright (C) hdsdi3g for hd3g.tv 2022, under the **GNU General Public License v3+**
+Copyright (C) hdsdi3g for hd3g.tv 2022-2023, under the **GNU General Public License v3+**

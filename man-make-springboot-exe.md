@@ -103,6 +103,7 @@ All used file which can be included and/or adapted in the creation of the packag
 | EXIT_CODE_CANT_FOUND_RPM_FILE_OUTPUT       | 10        |
 | EXIT_CODE_CANT_FOUND_APP_LOGGER            | 11        |
 | EXIT_CODE_CANT_FOUND_DEST_DIR              | 12        |
+| EXIT_CODE_CANT_FOUND_CLI_MAN               | 13        |
 
 # BUGS
 Free feel to send issues to https://github.com/hdsdi3g/linux-springboot-packager/issues.

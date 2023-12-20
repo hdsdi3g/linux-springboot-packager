@@ -27,11 +27,19 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends man xmlstarlet git wget tar nsis
       - name: Prepare temp dir for internal tests
         run: mkdir -p test/temp
-      - name: Run internal DEB test
+      - name: Run internal make DEB test
         run: make-springboot-deb test/demospringboot test/temp
-      - name: Run internal RPM test
+      - name: Run internal make DEB CLI test
+        run: make-springboot-deb test/democlispringboot test/temp
+      - name: Install internal DEB CLI test
+        run: sudo dpkg -i test/temp/democlispringboot-0.0.1-SNAPSHOT.deb
+      - name: Run internal DEB CLI test
+        run: democlispringboot A B
+      - name: Run internal make RPM test
         run: make-springboot-rpm test/demospringboot test/temp
+      - name: Run internal make RPM CLI test
+        run: make-springboot-rpm test/democlispringboot test/temp
       - name: Prepare fake WinSW
         run: sudo sh -c 'echo "Empty" > /usr/lib/linux-springboot-packager/templates/WinSW-x64.exe'
-      - name: Run internal EXE test
+      - name: Run internal make EXE test
         run: make-springboot-exe test/demospringboot test/temp

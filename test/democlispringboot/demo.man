@@ -1,0 +1,22 @@
+.TH "DEMO" "1" "12/18/2023" "DEMO" ""
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.nh
+.ad l
+.SH "NAME"
+demo
+
+.SH "SYNOPSIS"
+demo
+
+.SH "DESCRIPTION"
+demo
+
+.SH "EXAMPLES"
+demo
+
+.SH "OPTIONS"
+demo
+
+.SH "SEE ALSO"
+demo

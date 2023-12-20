@@ -89,6 +89,12 @@ function load_mvn_vars() {
     LOGBACK_VERSION=$(extract_var_from_pom "//x:project/x:dependencies/x:dependency[x:scope='compile' and x:groupId='ch.qos.logback' and x:artifactId='logback-classic']/x:version" "$TEMP_FULL_POM" "$NOT_FOUND");
     LOG4J2_VERSION=$(extract_var_from_pom "//x:project/x:dependencies/x:dependency[x:scope='compile' and x:groupId='org.apache.logging.log4j' and x:artifactId='log4j-api']/x:version" "$TEMP_FULL_POM" "$NOT_FOUND");
 
+    local KIND;
+    KIND=$(extract_var_from_pom //x:project/x:properties/x:"$POM_PROPS_KIND_TAG_NAME" "$TEMP_FULL_POM" "$POM_PROPS_KIND_SERVICE_VALUE");
+    if [ "$KIND" = "$POM_PROPS_KIND_CLI_VALUE" ]; then
+        IS_CLI=true;
+    fi
+
     if [ "${SKIP_IMPORT_POM:-"0"}" = "0" ]; then
         rm -f "$TEMP_FULL_POM";
     else
@@ -97,19 +103,32 @@ function load_mvn_vars() {
 }
 
 function def_linux_base_dir_vars() {
+    OUTPUT_DIR_APP="/usr/lib/$ARTIFACTID";
+
+    if [ "$IS_CLI" = true ]; then
+        OUTPUT_DIR_MAN="/usr/local/share/man/man1";
+    else
+        OUTPUT_DIR_MAN="/usr/local/share/man/man8";
+    fi
     OUTPUT_DIR_CONF="/etc/$ARTIFACTID";
     OUTPUT_DIR_DEFAUT="/etc/default";
     OUTPUT_DIR_SYSTEMD="/etc/systemd/system";
-    OUTPUT_DIR_MAN="/usr/local/share/man/man8";
-    OUTPUT_DIR_APP="/usr/lib/$ARTIFACTID";
     OUTPUT_DIR_LOG="/var/log/$ARTIFACTID";
     OUTPUT_DIR_USER="/var/lib/$ARTIFACTID";
+    if [ "$IS_CLI" = true ]; then
+        OUTPUT_DIR_BIN="/usr/bin";
+    fi
 }
 
 function def_linux_deb_base_dir_vars() {
-    OUTPUT_DIR_MAN="/usr/share/man/man8";
     OUTPUT_DIR_APP="/usr/share/$ARTIFACTID";
     OUTPUT_DIR_DOC="/usr/share/doc/$ARTIFACTID";
+
+    if [ "$IS_CLI" = true ]; then
+        OUTPUT_DIR_MAN="/usr/share/man/man1";
+    else
+        OUTPUT_DIR_MAN="/usr/share/man/man8";
+    fi
 }
 
 function def_windows_base_dir_vars() {
@@ -139,16 +158,23 @@ function def_files_dir_vars() {
     fi
     OUTPUT_LOGCONF_FILE="$OUTPUT_DIR_CONF/$OUTPUT_LOGCONF_NAME";
 
-    OUTPUT_MAN_NAME="$ARTIFACTID.8";
-    OUTPUT_MAN_FILE="$OUTPUT_DIR_MAN/$OUTPUT_MAN_NAME";
-    
     OUTPUT_SERVICE_NAME="$ARTIFACTID.service";
     OUTPUT_SERVICE_FILE="$OUTPUT_DIR_SYSTEMD/$OUTPUT_SERVICE_NAME";
     OUTPUT_SERVICE_LINK="$OUTPUT_DIR_APP/$OUTPUT_SERVICE_NAME";
+    if [ "$IS_CLI" = true ]; then
+        OUTPUT_RUNNER_FILE="$OUTPUT_DIR_BIN/$ARTIFACTID";
+    fi
 
     OUTPUT_ENV_NAME="$ARTIFACTID";
     OUTPUT_ENV_FILE="$OUTPUT_DIR_DEFAUT/$OUTPUT_ENV_NAME";
 
+    if [ "$IS_CLI" = true ]; then
+        OUTPUT_MAN_NAME="$ARTIFACTID.1";
+    else
+        OUTPUT_MAN_NAME="$ARTIFACTID.8";
+    fi
+    OUTPUT_MAN_FILE="$OUTPUT_DIR_MAN/$OUTPUT_MAN_NAME";
+    
     OUTPUT_LICENCE_NAME="LICENCE.txt";
     OUTPUT_LICENCE_FILE="$OUTPUT_DIR_APP/$OUTPUT_LICENCE_NAME";
     OUTPUT_THIRDPARTY_NAME="THIRD-PARTY.txt";
@@ -215,12 +241,17 @@ function prepare_rpm_build_dir() {
     mkdir -p "$RPM_WORKING_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
     BUILD_DIR="$RPM_WORKING_DIR/BUILD";
 
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_CONF";
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DEFAUT";
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_SYSTEMD";
+    if [ "$IS_CLI" = false ]; then
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_CONF";
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DEFAUT";
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_SYSTEMD";
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_LOG";
+    else
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_BIN";
+    fi
+
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_MAN";
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_APP";
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_LOG";
 }
 
 function prepare_deb_build_dir() {
@@ -229,13 +260,18 @@ function prepare_deb_build_dir() {
     DEBIAN_DIR="$DEB_WORKING_DIR/DEBIAN";
     mkdir -p "$DEBIAN_DIR"
     BUILD_DIR="$DEB_WORKING_DIR";
-    
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_CONF";
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DEFAUT";
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_SYSTEMD";
+
+    if [ "$IS_CLI" = false ]; then
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_CONF";
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DEFAUT";
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_SYSTEMD";
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_LOG";
+    else
+        mkdir -p "$BUILD_DIR/$OUTPUT_DIR_BIN";
+    fi
+
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_MAN";
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_APP";
-    mkdir -p "$BUILD_DIR/$OUTPUT_DIR_LOG";
     mkdir -p "$BUILD_DIR/$OUTPUT_DIR_DOC";
 }
 
@@ -272,6 +308,10 @@ function make_jar() {
 }
 
 function extract_default_app_conf() {
+    if [ "$IS_CLI" = true ]; then
+        return;
+    fi
+
     DEFAULT_CONF=$(find "$BASE_DIR" -not -path '*/.*' -not -path '*/node_modules/*' -not -path '*/target/*' -name "application.yml.example" | head -1);
     if [ -f "$DEFAULT_CONF" ] ; then
         echo "Use $DEFAULT_CONF as default configuration file, provided by project";
@@ -301,6 +341,10 @@ function extract_default_app_conf() {
 }
 
 function extract_default_linux_log_conf() {
+    if [ "$IS_CLI" = true ]; then
+        return;
+    fi
+    
     if [ "$LOGBACK_VERSION" != "$NOT_FOUND" ]; then
         echo "Detect logback version $LOGBACK_VERSION on dependencies"
         DEFAULT_LOG_CONF="$TEMPLATES_DIR/logback-linux-prod.xml";
@@ -332,7 +376,18 @@ function extract_default_windows_log_conf() {
 }
 
 function make_man_page() {
-    sed -e "$REPLACE" < "$TEMPLATES_DIR/template-man.md" | pandoc -s -t man -o "$BUILD_DIR/$OUTPUT_MAN_FILE"
+    if [ "$IS_CLI" = true ]; then
+        local PROJECT_MAN;
+        PROJECT_MAN=$(find "$BASE_DIR" -not -path '*/.*' -not -path '*/node_modules/*' -not -path '*/target/*' -name "*.man" | head -1);
+        if [ ! -f "$PROJECT_MAN" ] ; then
+            echo "Can't found a man page for this CLI project";
+            exit "$EXIT_CODE_CANT_FOUND_CLI_MAN";
+        fi
+
+        cp "$PROJECT_MAN" "$BUILD_DIR/$OUTPUT_MAN_FILE"
+    else
+        sed -e "$REPLACE" < "$TEMPLATES_DIR/template-man.md" | pandoc -s -t man -o "$BUILD_DIR/$OUTPUT_MAN_FILE"
+    fi
 }
 
 function make_html_doc_page() {
@@ -341,8 +396,18 @@ function make_html_doc_page() {
 }
 
 function make_service_conf() {
+    if [ "$IS_CLI" = true ]; then
+        return;
+    fi
     sed -e "$REPLACE" < "$TEMPLATES_DIR/systemd.service" > "$BUILD_DIR/$OUTPUT_SERVICE_FILE"
     echo "#ENV CONF FOR $NAME" > "$BUILD_DIR/$OUTPUT_ENV_FILE";
+}
+
+function make_bash_cli_runner() {
+    if [ "$IS_CLI" = false ]; then
+        return;
+    fi
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/cli-runner.bash" > "$BUILD_DIR/$OUTPUT_RUNNER_FILE"
 }
 
 function make_winsw_conf() {

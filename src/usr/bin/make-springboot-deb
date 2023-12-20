@@ -78,7 +78,6 @@ def_linux_base_dir_vars;
 def_linux_deb_base_dir_vars;
 echo " * Def file/dir vars";
 def_files_dir_vars;
-
 echo " * Prepare DEB build dir";
 prepare_deb_build_dir;
 
@@ -93,6 +92,7 @@ make_replace_list_vars;
 echo " * Extract linux log conf";
 extract_default_linux_log_conf;
 
+echo " * Prepare man page";
 make_man_page;
 gzip -9n "$BUILD_DIR/$OUTPUT_MAN_FILE";
 chmod 644 "$BUILD_DIR/$OUTPUT_MAN_FILE.gz"
@@ -100,12 +100,20 @@ chmod 644 "$BUILD_DIR/$OUTPUT_MAN_FILE.gz"
 echo " * Make service conf";
 make_service_conf;
 
+echo " * Make CLI runner";
+make_bash_cli_runner;
+
 echo " * Make Debian package files";
 OUTPUT_CONTROL_FILE="$DEBIAN_DIR/control";
 OUTPUT_CHANGELOG_FILE="$DEB_WORKING_DIR/$OUTPUT_DIR_DOC/changelog";
 OUTPUT_COPYRIGHT_FILE="$DEB_WORKING_DIR/$OUTPUT_DIR_DOC/copyright";
 
-sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-control" > "$OUTPUT_CONTROL_FILE";
+if [ "$IS_CLI" = true ]; then
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-control-cli" > "$OUTPUT_CONTROL_FILE";
+else
+    sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-control-service" > "$OUTPUT_CONTROL_FILE";
+fi
+
 sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-changelog" > "$OUTPUT_CHANGELOG_FILE";
 sed -e "$REPLACE" < "$TEMPLATES_DIR/debian-copyright" > "$OUTPUT_COPYRIGHT_FILE";
 
@@ -113,53 +121,68 @@ gzip -9n "$OUTPUT_CHANGELOG_FILE"
 chmod 644 "$OUTPUT_CHANGELOG_FILE.gz"
 chmod 644 "$OUTPUT_COPYRIGHT_FILE"
 
-find "$DEB_WORKING_DIR/etc" -type f \
-    | sed -e "s~$DEB_WORKING_DIR/~/~g;" > "$DEBIAN_DIR/conffiles";
+if [ "$IS_CLI" = false ]; then
+    find "$DEB_WORKING_DIR/etc" -type f \
+        | sed -e "s~$DEB_WORKING_DIR/~/~g;" > "$DEBIAN_DIR/conffiles";
+fi
 
 OUTPUT_PREINST_FILE="$DEBIAN_DIR/preinst";
 OUTPUT_POSTINST_FILE="$DEBIAN_DIR/postinst";
 OUTPUT_PRERM_FILE="$DEBIAN_DIR/prerm";
 OUTPUT_POSTRM_FILE="$DEBIAN_DIR/postrm";
 
-{
-    echo '#!/bin/sh'; 
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh";
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/create-user.inc.sh";
-} > "$OUTPUT_PREINST_FILE";
+if [ "$IS_CLI" = false ]; then
+    {
+        echo '#!/bin/sh'; 
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh";
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/create-user.inc.sh";
+    } > "$OUTPUT_PREINST_FILE";
+    chmod +x "$OUTPUT_PREINST_FILE";
+fi
 
 {
     echo '#!/bin/sh';
-    echo "echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
-    echo "ln -sf $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK";
-    echo "systemctl daemon-reload";
-    echo "systemctl enable $ARTIFACTID";
+    if [ "$IS_CLI" = false ]; then
+        echo "echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
+        echo "ln -sf $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK";
+        echo "systemctl daemon-reload";
+        echo "systemctl enable $ARTIFACTID";
+        echo "chown $ARTIFACTID:$ARTIFACTID \"$OUTPUT_DIR_LOG\"";
+        echo "chmod 0700 \"$OUTPUT_DIR_LOG\"";
+    fi
     echo "mandb -q";
-    echo "chown $ARTIFACTID:$ARTIFACTID \"$OUTPUT_DIR_LOG\"";
-    echo "chmod 0700 \"$OUTPUT_DIR_LOG\"";
     echo "echo \"Use man $ARTIFACTID to get setup informations.\"";
 } > "$OUTPUT_POSTINST_FILE";
+chmod +x "$OUTPUT_POSTINST_FILE";
 
-{
-    echo '#!/bin/sh';
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh";
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh";
-} > "$OUTPUT_PRERM_FILE";
+if [ "$IS_CLI" = false ]; then
+    {
+        echo '#!/bin/sh';
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh";
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh";
+    } > "$OUTPUT_PRERM_FILE";
+    chmod +x "$OUTPUT_PRERM_FILE";
+fi
 
 {
     echo '#!/bin/sh';
     echo "mandb -q";
-    echo "systemctl daemon-reload";
+    if [ "$IS_CLI" = false ]; then
+        echo "systemctl daemon-reload";
+    fi
 } > "$OUTPUT_POSTRM_FILE";
-
-chmod +x "$OUTPUT_PREINST_FILE";
-chmod +x "$OUTPUT_POSTINST_FILE";
-chmod +x "$OUTPUT_PRERM_FILE";
 chmod +x "$OUTPUT_POSTRM_FILE";
 
 find "$DEB_WORKING_DIR" -type d -exec chmod 755 {} +
-find "$DEB_WORKING_DIR/etc" -type f -exec chmod 644 {} +
-find "$DEB_WORKING_DIR/etc" -type f -name application.yml -exec chmod 600 {} +
+if [ -d "$DEB_WORKING_DIR/etc" ]; then
+    find "$DEB_WORKING_DIR/etc" -type f -exec chmod 644 {} +
+    find "$DEB_WORKING_DIR/etc" -type f -name application.yml -exec chmod 600 {} +
+fi
 find "$DEB_WORKING_DIR/usr" -type f -exec chmod 644 {} +
+
+if [ -d "$DEB_WORKING_DIR/usr/bin" ]; then
+    find "$DEB_WORKING_DIR/usr/bin" -type f -exec chmod 755 {} +
+fi
 
 if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
     dpkg-deb --root-owner-group --build "$DEB_WORKING_DIR"
@@ -177,7 +200,7 @@ if [ "${SKIP_MAKE:-"0"}" = "0" ]; then
 
     lintian --fail-on warning \
         --no-tag-display-limit \
-        --suppress-tags debian-changelog-file-missing-or-wrong-name,non-standard-file-perm,unknown-java-class-version,maintainer-script-calls-systemctl,systemd-service-in-odd-location,maintainer-script-ignores-errors \
+        --suppress-tags debian-changelog-file-missing-or-wrong-name,non-standard-file-perm,unknown-java-class-version,maintainer-script-calls-systemctl,systemd-service-in-odd-location,maintainer-script-ignores-errors,bad-whatis-entry \
         "$FINAL_DEB_FILE"
 
     echo "";

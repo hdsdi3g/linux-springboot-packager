@@ -97,6 +97,9 @@ SPEC_FILE="$RPM_WORKING_DIR/SPECS/$ARTIFACTID.spec";
 echo " * Make service conf";
 make_service_conf;
 
+echo " * Make CLI runner";
+make_bash_cli_runner;
+
 RPM_VERSION="${VERSION//-/.}";
 {
     echo "# AUTOMATICALLY GENERATED THE ""$(LANG="en_US.UTF-8" date)";
@@ -109,11 +112,17 @@ RPM_VERSION="${VERSION//-/.}";
     echo "Version:             $RPM_VERSION";
     echo "Release:             $RPM_RELEASE";
     echo "BuildArch:           $ARCH";
-    echo "Group:               System Environment/Daemons";
+    if [ "$IS_CLI" = true ]; then
+        echo "Group:               Applications/System";
+    else
+        echo "Group:               System Environment/Daemons";
+    fi
     echo "Vendor:              $ORG_NAME"
     echo "Requires:            bash man";
-    echo "Requires(pre):       /usr/sbin/useradd";
-    echo "Requires(pre):       /usr/bin/systemctl";
+    if [ "$IS_CLI" = false ]; then
+        echo "Requires(pre):       /usr/sbin/useradd";
+        echo "Requires(pre):       /usr/bin/systemctl";
+    fi
     echo "";
     echo "%description";
     echo "You will need Java version $JAVA_VERSION to run this software, and must be accessible from $JAVA."
@@ -136,16 +145,23 @@ RPM_VERSION="${VERSION//-/.}";
     # Man file
     echo "%doc %attr(0644,root,root) $OUTPUT_MAN_FILE";
 
-    # Conf files
-    echo "%dir $OUTPUT_DIR_CONF";
-    echo "%config(noreplace) %attr(0600,$ARTIFACTID,$ARTIFACTID) $OUTPUT_APPCONF_FILE";
-    echo "%config(noreplace) %attr(0600,$ARTIFACTID,$ARTIFACTID) $OUTPUT_LOGCONF_FILE";
-    echo "%config(noreplace) %attr(0755,root,root) $OUTPUT_ENV_FILE";
+    if [ "$IS_CLI" = false ]; then
+        # Conf files
+        echo "%dir $OUTPUT_DIR_CONF";
+        echo "%config(noreplace) %attr(0600,$ARTIFACTID,$ARTIFACTID) $OUTPUT_APPCONF_FILE";
+        echo "%config(noreplace) %attr(0600,$ARTIFACTID,$ARTIFACTID) $OUTPUT_LOGCONF_FILE";
+        echo "%config(noreplace) %attr(0755,root,root) $OUTPUT_ENV_FILE";
+    fi
 
     echo "%dir $OUTPUT_DIR_APP" | sed_usr_lib;
 
-    # Service file
-    echo "%config(noreplace) %attr(0644,root,root) $OUTPUT_SERVICE_FILE" | sed_usr_lib;
+    if [ "$IS_CLI" = true ]; then
+        # CLI runner
+        echo "%attr(0755,root,root) $OUTPUT_RUNNER_FILE";
+    else
+        # Service file
+        echo "%config(noreplace) %attr(0644,root,root) $OUTPUT_SERVICE_FILE" | sed_usr_lib;
+    fi
 
     # App files
     echo "%attr(0644,root,root) $OUTPUT_JAR_FILE" | sed_usr_lib;
@@ -158,19 +174,23 @@ RPM_VERSION="${VERSION//-/.}";
         echo "%attr(0644,root,root) $OUTPUT_THIRDPARTY_FILE" | sed_usr_lib;
     fi
 
-    echo "%dir %attr(0700,$ARTIFACTID,$ARTIFACTID) $OUTPUT_DIR_LOG";
+    if [ "$IS_CLI" = false ]; then
+        echo "%dir %attr(0700,$ARTIFACTID,$ARTIFACTID) $OUTPUT_DIR_LOG";
+    fi
     echo "";
 
     ##########################################################################################
     ### PRE INSTALL
     ##########################################################################################
-    echo "%pre -p /usr/bin/bash";
-    # install $1 == 1
-    # upgrade (new) $1 == 2
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/create-user.inc.sh"
-    echo "exit 0;";
-    echo "";
+    if [ "$IS_CLI" = false ]; then
+        echo "%pre -p /usr/bin/bash";
+        # install $1 == 1
+        # upgrade (new) $1 == 2
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/create-user.inc.sh"
+        echo "exit 0;";
+        echo "";
+    fi
 
     ##########################################################################################
     ### POST INSTALL
@@ -178,10 +198,12 @@ RPM_VERSION="${VERSION//-/.}";
     echo "%post -p /usr/bin/bash";
     # install $1 == 1
     # upgrade (new) $1 == 2
-    echo "[ \$1 = 1 ] && echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
-    echo "[ \$1 = 1 ] && ln -sf $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK" | sed_usr_lib;
-    echo "[ \$1 = 1 ] && systemctl daemon-reload";
-    echo "[ \$1 = 1 ] && systemctl enable $ARTIFACTID";
+    if [ "$IS_CLI" = false ]; then
+        echo "[ \$1 = 1 ] && echo \"Enable service $ARTIFACTID with systemctl, but don't start it.\"";
+        echo "[ \$1 = 1 ] && ln -sf $OUTPUT_SERVICE_FILE $OUTPUT_SERVICE_LINK" | sed_usr_lib;
+        echo "[ \$1 = 1 ] && systemctl daemon-reload";
+        echo "[ \$1 = 1 ] && systemctl enable $ARTIFACTID";
+    fi
     echo "mandb -q";
     echo "echo \"Use man $ARTIFACTID to get setup informations.\"";
     echo "exit 0;";
@@ -190,19 +212,18 @@ RPM_VERSION="${VERSION//-/.}";
     ##########################################################################################
     ### PRE UNINSTALL
     ##########################################################################################
-    echo "%preun -p /usr/bin/bash";
-    # With RPM parameters $1:
-    # 0 remove
-    # 1 install
-    # 1 upgrade old uninstall
-    # 2 upgrade new install
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
-    #echo "if [ \"\$1\" -eq \"0\" ]; then";
-    sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh"
-    #echo "fi";
-    echo "exit 0;";
-    echo "";
-
+    if [ "$IS_CLI" = false ]; then
+        echo "%preun -p /usr/bin/bash";
+        # With RPM parameters $1:
+        # 0 remove
+        # 1 install
+        # 1 upgrade old uninstall
+        # 2 upgrade new install
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/stop-service.inc.sh"
+        sed -e "$REPLACE/^[ \t]*#/d;/^$/d" < "$TEMPLATES_DIR/disable-service.inc.sh"
+        echo "exit 0;";
+        echo "";
+    fi
     ##########################################################################################
     ### POST UNINSTALL
     ##########################################################################################
@@ -210,9 +231,11 @@ RPM_VERSION="${VERSION//-/.}";
     # upgrade (old) $1 == 1
     # remove $1 == 0
     echo "mandb -q";
-    echo "[ \$1 -eq 0 ] && echo \"To clean-up this setup, you should remove $OUTPUT_DIR_CONF, $OUTPUT_DIR_USER, $OUTPUT_DIR_LOG\"." | sed_usr_lib;
-    echo "[ \$1 -eq 0 ] && echo \"And you can delete user and group $ARTIFACTID\".";
-    echo "systemctl daemon-reload";
+    if [ "$IS_CLI" = false ]; then
+        echo "[ \$1 -eq 0 ] && echo \"To clean-up this setup, you should remove $OUTPUT_DIR_CONF, $OUTPUT_DIR_USER, $OUTPUT_DIR_LOG\"." | sed_usr_lib;
+        echo "[ \$1 -eq 0 ] && echo \"And you can delete user and group $ARTIFACTID\".";
+        echo "systemctl daemon-reload";
+    fi
     echo "exit 0;";
     echo "";
 } > "$SPEC_FILE"

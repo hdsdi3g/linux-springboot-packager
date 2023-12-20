@@ -36,6 +36,17 @@ if [ -d "$TEST_TEMP_DIR" ]; then
 fi
 mkdir -p "$TEST_TEMP_DIR";
 
+###################
+# DEB CLI TEST ZONE
+###################
+"$PREFIX/usr/bin/make-springboot-deb" "$TESTROOT/democlispringboot" "$TEST_TEMP_DIR"
+
+EXPECTED_TEST_PACKAGE="$TEST_TEMP_DIR/democlispringboot-0.0.1-SNAPSHOT.deb";
+if [ ! -f "$EXPECTED_TEST_PACKAGE" ]; then
+    echo "Error: can't found builded package: $EXPECTED_TEST_PACKAGE" >&2;
+    exit 1;
+fi
+
 ################
 # DEB TEST ZONE
 ################
@@ -100,6 +111,18 @@ assert_contain "/usr/lib/demospringboot/demospringboot-bin.jar";
 assert_contain "/etc/systemd/system/demospringboot.service";
 assert_contain "/usr/local/share/man/man8/demospringboot.8";
 assert_contain "/var/log/demospringboot";
+
+###################
+# RPM CLI TEST ZONE
+###################
+
+"$PREFIX/usr/bin/make-springboot-rpm" "$TESTROOT/democlispringboot" "$TEST_TEMP_DIR"
+
+EXPECTED_TEST_PACKAGE="$TEST_TEMP_DIR/democlispringboot-0.0.1-SNAPSHOT.rpm";
+if [ ! -f "$EXPECTED_TEST_PACKAGE" ]; then
+    echo "Error: can't found builded package: $EXPECTED_TEST_PACKAGE" >&2;
+    exit 1;
+fi
 
 ################
 # EXE TEST ZONE
