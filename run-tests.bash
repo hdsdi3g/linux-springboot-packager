@@ -17,6 +17,8 @@
 #    along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #    Usage: ./run-tests
+#
+#    manage-internal-deb-repo are not tested here
 
 set -eu
 
@@ -61,7 +63,6 @@ fi
 ################
 # RPM TEST ZONE
 ################
-
 "$PREFIX/usr/bin/make-springboot-rpm" "$TESTROOT/demospringboot" "$TEST_TEMP_DIR"
 
 EXPECTED_TEST_PACKAGE="$TEST_TEMP_DIR/demospringboot-0.0.1-SNAPSHOT.rpm";

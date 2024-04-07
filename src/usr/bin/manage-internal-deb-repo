@@ -1,0 +1,208 @@
+#!/bin/bash
+#    manage-internal-deb-repo - create/manage a Debian "internal" repository, and push new deb files to it
+#
+#    Copyright (C) hdsdi3g for hd3g.tv 2024
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or any
+#    later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+#    Interactive usage (bootstrap and manual craft repo):
+#        manage-internal-deb-repo
+#    Automatic usage:
+#        manage-internal-deb-repo package-to-add.deb
+#
+#    You will need gpg, with a private key setup by default, realpath, apt-ftparchive, optionnaly rsync.
+#    Fonctionnal on Debian-like hosts.
+#    Deb package agnostic, but only works for architecture "all".
+
+# https://unix.stackexchange.com/questions/403485/how-to-generate-the-release-file-on-a-local-package-repository
+# https://gist.github.com/aarroyoc/1a96b2f8b01fcf34221a
+
+set -eu
+
+EXIT_CODE_MISSING_DEPENDENCY_COMMAND=1;
+EXIT_CODE_MISSING_RSYNC_TARGET_DIR=2;
+
+if ! [ -x "$(command -v realpath)" ]; then
+    echo "Error: realpath is not installed." >&2
+    exit $EXIT_CODE_MISSING_DEPENDENCY_COMMAND;
+fi
+if ! [ -x "$(command -v gpg)" ]; then
+    echo "Error: gpg is not installed." >&2
+    exit $EXIT_CODE_MISSING_DEPENDENCY_COMMAND;
+fi
+if ! [ -x "$(command -v apt-ftparchive)" ]; then
+    echo "Error: apt-ftparchive is not installed." >&2
+    exit $EXIT_CODE_MISSING_DEPENDENCY_COMMAND;
+fi
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Don't run this script as root!" >&2
+    exit 2;
+fi
+
+SCRIPT_DIR="$(pwd)";
+CONF_FILE="$HOME/.config/.debrepo";
+DEFAULT_LOCAL_REPO="$HOME/.debrepo";
+IS_FIRST_STARTS="0";
+
+if [ ! -f "$CONF_FILE" ]; then
+    echo "Enter a working directory (future deb repository), it will be created, if needed.";
+    read -r -p "Directory path: [$DEFAULT_LOCAL_REPO]" RELATIVE_REPO_DIR;
+
+    if [ "$RELATIVE_REPO_DIR" == "" ]; then
+        REPO_DIR="$DEFAULT_LOCAL_REPO";
+    else
+        REPO_DIR=$(realpath "$RELATIVE_REPO_DIR");
+    fi
+    
+    read -r -p "Work on $REPO_DIR ? [y/N] " CONTINUE;
+
+    if [ "$CONTINUE" != "y" ]; then
+        echo "Cancel script";
+        exit 0;
+    fi
+    echo "Save configuration on $CONF_FILE";
+    mkdir -p "$(dirname "$CONF_FILE")";
+    echo "$REPO_DIR" > "$CONF_FILE";
+else
+    REPO_DIR="$(cat "$CONF_FILE")";
+    echo "Load working dir $REPO_DIR (from configuration file $CONF_FILE)";
+fi
+
+mkdir -p "$REPO_DIR";
+cd "$REPO_DIR";
+mkdir -p "dists/stable/main/binary-all";
+mkdir -p "pool";
+
+if [ -f "packages-all.db" ]; then
+    rm -f "packages-all.db";
+fi
+
+APTCONF_FILE="aptftp.conf";
+if [ ! -f "$APTCONF_FILE" ]; then
+    IS_FIRST_STARTS="1";
+    echo "Create $APTCONF_FILE.You can restart this script after edit it as you needs.";
+    cat << EOF > "$APTCONF_FILE"
+APT::FTPArchive::Release {
+Suite "stable";
+Codename "stable";
+Architectures "all";
+Components "main";
+Origin "Internal only crafted packages";
+Label "Internal only package use";
+Description "https://github.com/hdsdi3g/linux-springboot-packager";
+};
+EOF
+fi
+
+APTGENERATE_FILE="aptgenerate.conf";
+if [ ! -f "$APTGENERATE_FILE" ]; then
+    IS_FIRST_STARTS="1";
+    echo "Create $APTGENERATE_FILE. You can restart this script after edit it as you needs.";
+    cat << EOF > "$APTGENERATE_FILE"
+Dir::ArchiveDir ".";
+Dir::CacheDir ".";
+TreeDefault::Directory "pool/";
+Default::Packages::Extensions ".deb";
+Default::Packages::Compress ". gzip bzip2";
+Default::Contents::Compress "gzip bzip2";
+
+BinDirectory "dists/stable/main/binary-all" {
+  Packages "dists/stable/main/binary-all/Packages";
+  Contents "dists/stable/Contents";
+};
+
+Tree "dists/stable" {
+  Sections "main";
+  Architectures "all";
+};
+EOF
+fi
+
+PUBKEY_FILE="pubkey.asc";
+if [ ! -f "$PUBKEY_FILE" ]; then
+    IS_FIRST_STARTS="1";
+    echo "Export $PUBKEY_FILE from your gpg public key";
+    gpg --pinentry-mode loopback --export --armor | tee "$PUBKEY_FILE" > /dev/null
+fi
+
+if [ "$#" -eq 1 ]; then
+    if [[ "$1" != *".deb"  ]]; then
+        echo "Only add a deb file on command line: $1" >&2
+        exit 2;
+    fi 
+    NEW_DEB_FILE="$1";
+    if [ ! -f "$NEW_DEB_FILE" ]; then
+        NEW_DEB_FILE="$SCRIPT_DIR/$NEW_DEB_FILE";
+    fi
+    if [ ! -f "$NEW_DEB_FILE" ]; then
+        echo "The supplied file on command line don't exists: $NEW_DEB_FILE" >&2
+        exit 2;
+    fi
+    
+    echo "Import (move) $NEW_DEB_FILE to the internal repo";
+    DEST_DEB_FILE="$(basename "$NEW_DEB_FILE")";    
+    if [[ "$DEST_DEB_FILE" != *"_all.deb"  ]]; then
+        DEST_DEB_FILE="$(basename "$DEST_DEB_FILE" .deb)_all.deb";    
+    fi 
+
+    DEST_DEB_FILE="$REPO_DIR/pool/$DEST_DEB_FILE";
+    if [ -f "$DEST_DEB_FILE" ]; then
+        rm -f "$DEST_DEB_FILE";  
+    fi
+    mv "$NEW_DEB_FILE" "$DEST_DEB_FILE";
+fi
+
+POOL_FILE_COUNT=$(find pool -name "*_all.deb" -type f | wc -l);
+
+if [ "$POOL_FILE_COUNT" == "0" ]; then
+    echo "Please, put DEB files on $(pwd)/pool";
+    echo "Beware, all files names must end with \"_all.deb\"!";
+    echo "Or, just add a deb file as a paramerer to this script";
+    echo "And after, restart this script.";
+    exit 0;
+fi
+
+echo "Generate repository on $POOL_FILE_COUNT deb file(s)...";
+apt-ftparchive generate -c=aptftp.conf aptgenerate.conf
+apt-ftparchive release -c=aptftp.conf dists/stable > dists/stable/Release
+rm -f dists/stable/Release.gpg
+rm -f dists/stable/InRelease
+
+echo "Sign repository manifests (Release files) with GPG..."
+gpg --pinentry-mode loopback --output dists/stable/Release.gpg -ba dists/stable/Release
+gpg --pinentry-mode loopback -a --yes --clearsign --output dists/stable/InRelease --detach-sign dists/stable/Release
+
+if [ "$IS_FIRST_STARTS" == "1" ]; then
+    echo "The repository is created.";
+    echo "";
+    echo "To setup an host with an APT source list file to this local repo, please create a file like internal-deb.list on /etc/apt/sources.list.d, via the command:";
+    echo "sudo echo deb [signed-by=$REPO_DIR/pubkey.asc arch=all] file://$REPO_DIR stable main | sudo tee /etc/apt/sources.list.d/internal-deb.list > /dev/null";
+else
+    echo "The repository is updated.";
+fi
+
+CONF_FILE_ROOT_DEPLOY="$HOME/.config/.debrepo-rootdeploy";
+if [ -f "$CONF_FILE_ROOT_DEPLOY" ]; then
+    echo "Deploy as root";
+    ROOT_DEPLOY_PATH="$(cat "$CONF_FILE_ROOT_DEPLOY")";
+    if ! [ -d "$ROOT_DEPLOY_PATH" ]; then
+        echo "Can't found $ROOT_DEPLOY_PATH directory (via $CONF_FILE_ROOT_DEPLOY)" >&2
+        exit $EXIT_CODE_MISSING_RSYNC_TARGET_DIR;
+    fi
+    if ! [ -x "$(command -v rsync)" ]; then
+        echo "Error: rsync is not installed." >&2
+        exit $EXIT_CODE_MISSING_DEPENDENCY_COMMAND;
+    fi
+    sudo rsync -r --exclude=".*" --exclude="*.conf" --exclude="*.db" --delete "$REPO_DIR/" "$ROOT_DEPLOY_PATH/";
+fi

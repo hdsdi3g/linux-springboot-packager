@@ -6,6 +6,22 @@ make-springboot-exe.1
 search-winsw.bash.1
 pkgdeb
 
+# bootstrap-deb-repo
+aptftp.conf
+aptgenerate.conf
+packages-all.db
+pubkey.asc
+Release
+Release.gpg
+InRelease
+Contents.gz
+Contents.bz2
+Contents-all.gz
+Contents-all.bz2
+Packages
+Packages.gz
+Packages.bz2
+
 # Maven
 target/
 !**/src/main/**

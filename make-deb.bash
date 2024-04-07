@@ -48,11 +48,10 @@ VERSION="$(git describe --tags || echo "0.SNAPSHOT")";
     echo "Architecture: all"
     echo "Section: devel"
     echo "Priority: optional"
-    echo "Depends: bash (>=5), coreutils (>=8.3), man-db, pandoc, rpmlint, rpm"
-    echo "Recommends: maven"
-    echo "Suggests: nodejs, nsis, default-jdk"
+    echo "Depends: bash (>=5), coreutils (>=8.3), man-db, pandoc, rpmlint, rpm, gpg, apt-utils"
+    echo "Suggests: maven, nodejs, nsis, sudo, rsync"
     echo "Homepage: https://github.com/hdsdi3g/linux-springboot-packager"
-    echo "Description: Create Linux RPM packages and Windows installers"
+    echo "Description: Create Linux RPM/DEB packages and Windows installers"
     echo " for a Spring Boot project."
 } > "$CONTROL_FILE"
 
@@ -75,6 +74,7 @@ mkdir -p "$MAN_DIR"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-rpm.1" "$ROOT/man-make-springboot-rpm.md"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-deb.1" "$ROOT/man-make-springboot-deb.md"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-exe.1" "$ROOT/man-make-springboot-exe.md"
+pandoc -s -t man -o "$MAN_DIR/manage-internal-deb-repo.1" "$ROOT/man-manage-internal-deb-repo.md"
 pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
 
 # PREPARE COPYRIGHT
@@ -110,4 +110,4 @@ lintian --fail-on warning \
     "$PACKAGE_FILE"
 
 echo "";
-echo "Now, you can install this app with sudo dpkg -i $PACKAGE_FILE";
+echo "Now, you can install this app with sudo dpkg -i $PACKAGE_FILE, or publish it via manage-internal-deb-repo";

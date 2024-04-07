@@ -46,4 +46,3 @@ jobs:
           -H "Content-Type: text/plain" \
           --data-binary "@${{ env.DEB_FILE }}" \
           ${{ env.UPLOAD_URL }}?name=linux-springboot-packager-${{ env.VERSION }}.deb
-  

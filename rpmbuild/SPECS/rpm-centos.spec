@@ -28,7 +28,7 @@ Release:             %{getenv:RELEASE}
 BuildArch:           noarch
 Group:               Development/Tools
 Vendor:              hd3g.tv
-Requires:            bash man pandoc xmlstarlet git rpm-build rpmlint
+Requires:            bash man pandoc xmlstarlet git rpm-build rpmlint rsync gpg
 
 %description
 You will need Java, Maven, basename, realpath, and optionnally rpmbuild, rpmlint, npm, makensis.
@@ -39,6 +39,7 @@ Provided by hd3g.tv (https://hd3g.tv), for more information, go to https://githu
 %attr(0755,root,root) %{_bindir}/make-springboot-exe
 %attr(0755,root,root) %{_bindir}/make-springboot-rpm
 %attr(0755,root,root) %{_bindir}/make-springboot-deb
+%attr(0755,root,root) %{_bindir}/manage-internal-deb-repo
 %attr(0755,root,root) %{_bindir}/search-winsw.bash
 %attr(0644, root,root) %{_libdir}/linux-springboot-packager/*
 %doc %attr(0644, root,root) /usr/local/share/man/man1/*

@@ -55,6 +55,7 @@ pandoc -s -t man -o "$MAN_DIR/make-springboot-rpm.1" "$ROOT/man-make-springboot-
 pandoc -s -t man -o "$MAN_DIR/make-springboot-deb.1" "$ROOT/man-make-springboot-deb.md"
 pandoc -s -t man -o "$MAN_DIR/make-springboot-exe.1" "$ROOT/man-make-springboot-exe.md"
 pandoc -s -t man -o "$MAN_DIR/search-winsw.bash.1" "$ROOT/search-winsw.bash.md"
+pandoc -s -t man -o "$MAN_DIR/manage-internal-deb-repo.1" "$ROOT/man-manage-internal-deb-repo.md"
 
 SPEC_FILE="rpmbuild/SPECS/rpm-centos.spec";
 rpmlint "$SPEC_FILE"
