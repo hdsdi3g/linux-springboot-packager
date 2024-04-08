@@ -291,20 +291,31 @@ function prepare_exe_build_dir() {
 
 function make_jar() {
     local MVN_TARGET="$BASE_DIR/target";
-    SPRING_EXEC="$MVN_TARGET/$ARTIFACTID-$VERSION.$PACKAGING";
+    SPRING_EXEC_OPT1="$MVN_TARGET/$ARTIFACTID-$VERSION-exec.$PACKAGING";
+    SPRING_EXEC_OPT2="$MVN_TARGET/$ARTIFACTID-$VERSION.$PACKAGING";
 
-    if [ -f "$SPRING_EXEC" ] && [ "${SKIP_BUILD:-"0"}" = "1" ]; then
-        echo "Skip Maven SpringBoot jar file build";
+    if [ "${SKIP_BUILD:-"0"}" = "1" ]; then
+        if [ -f "$SPRING_EXEC_OPT1" ] || [ -f "$SPRING_EXEC_OPT2" ]; then
+            echo "Skip Maven SpringBoot jar file build";
+        else
+            echo "Start Maven: make SpringBoot jar file..."
+            $MVN -f "$MVN_POM" "${MAVEN_OPTS[@]}" clean install
+        fi
     else
         echo "Start Maven: make SpringBoot jar file..."
         $MVN -f "$MVN_POM" "${MAVEN_OPTS[@]}" clean install
     fi
 
-    if [ ! -f "$SPRING_EXEC" ] ; then
-        echo "Can't find maven compiled file: $SPRING_EXEC" >&2;
+    if [ -f "$SPRING_EXEC_OPT1" ]; then
+        echo "Use SpringBoot jar file: $SPRING_EXEC_OPT1";
+        cp "$SPRING_EXEC_OPT1" "$BUILD_DIR/$OUTPUT_JAR_FILE";
+    elif [ -f "$SPRING_EXEC_OPT2" ]; then
+        echo "Use SpringBoot jar file: $SPRING_EXEC_OPT2";
+        cp "$SPRING_EXEC_OPT2" "$BUILD_DIR/$OUTPUT_JAR_FILE";
+    else
+        echo "Can't find maven compiled file: $SPRING_EXEC_OPT2" >&2;
         exit "$EXIT_CODE_CANT_FOUND_JAR_FILE_OUTPUT";
     fi
-    cp "$SPRING_EXEC" "$BUILD_DIR/$OUTPUT_JAR_FILE";
 }
 
 function extract_default_app_conf() {
