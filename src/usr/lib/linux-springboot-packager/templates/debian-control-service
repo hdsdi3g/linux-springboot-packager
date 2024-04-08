@@ -5,6 +5,8 @@ Architecture: all
 Section: web
 Priority: optional
 Pre-Depends: bash (>=5), man-db (>=2.8.5), passwd, systemd
-Recommends: default-jdk
 Homepage: @URL@
 Description: @SHORT_DESCRIPTION@
+ You will need Java version @JAVA_VERSION@ to run this software,
+ and must be accessible from @JAVA@.
+ Provided by @ORG_NAME@ (@ORG_URL@).
