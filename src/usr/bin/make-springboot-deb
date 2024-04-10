@@ -176,7 +176,6 @@ chmod +x "$OUTPUT_POSTRM_FILE";
 find "$DEB_WORKING_DIR" -type d -exec chmod 755 {} +
 if [ -d "$DEB_WORKING_DIR/etc" ]; then
     find "$DEB_WORKING_DIR/etc" -type f -exec chmod 644 {} +
-    find "$DEB_WORKING_DIR/etc" -type f -name application.yml -exec chmod 600 {} +
 fi
 find "$DEB_WORKING_DIR/usr" -type f -exec chmod 644 {} +
 
